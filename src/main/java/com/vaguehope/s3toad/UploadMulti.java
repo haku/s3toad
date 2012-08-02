@@ -31,7 +31,6 @@ public class UploadMulti {
 	private String key;
 	private final ExecutorService executor;
 
-
 	public UploadMulti (AmazonS3 s3Client, File file, String bucket, String key, int threads) {
 		this.s3Client = s3Client;
 		this.file = file;
@@ -46,14 +45,15 @@ public class UploadMulti {
 
 	public void run () throws Exception {
 		long contentLength = this.file.length();
+		System.err.println("contentLength=" + contentLength);
+		System.err.println("partsize=" + PART_SIZE);
 
 		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
 		PrgTracker tracker = new PrgTracker();
 
+		final long startTime = System.currentTimeMillis();
 		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(this.bucket, this.key);
 		InitiateMultipartUploadResult initResponse = this.s3Client.initiateMultipartUpload(initRequest);
-
-		final long startTime = System.currentTimeMillis();
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {
@@ -68,6 +68,8 @@ public class UploadMulti {
 				uploadFutures.add(this.executor.submit(new PartUploader(this.s3Client, uploadRequest)));
 				filePosition += PART_SIZE;
 			}
+			System.err.println("parts=" + uploadFutures.size());
+
 			List<PartETag> partETags = new ArrayList<PartETag>();
 			for (Future<UploadPartResult> future : uploadFutures) {
 				partETags.add(future.get().getPartETag());
@@ -96,7 +98,13 @@ public class UploadMulti {
 
 		@Override
 		public UploadPartResult call () throws Exception {
-			return this.s3Client.uploadPart(this.uploadRequest);
+			final long startTime = System.currentTimeMillis();
+			UploadPartResult res = this.s3Client.uploadPart(this.uploadRequest);
+			final long seconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
+			System.err.println("part=" + this.uploadRequest.getPartNumber()
+					+ " size=" + this.uploadRequest.getPartSize()
+					+ " duration=" + seconds + "s.");
+			return res;
 		}
 
 	}
