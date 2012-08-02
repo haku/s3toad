@@ -103,7 +103,7 @@ public class UploadMulti {
 			final long seconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
 			System.err.println("part=" + this.uploadRequest.getPartNumber()
 					+ " size=" + this.uploadRequest.getPartSize()
-					+ " duration=" + seconds + "s.");
+					+ " duration=" + seconds + "s");
 			return res;
 		}
 
