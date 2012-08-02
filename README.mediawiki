@@ -2,3 +2,6 @@
 
 A quick and ugly utility for working with AWS S3.
 
+== Build ==
+
+mvn clean install assembly:single
