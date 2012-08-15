@@ -38,6 +38,9 @@ public class Main {
 		else if ("status".equalsIgnoreCase(act)) {
 			doStatus(remainingArgs);
 		}
+		else if ("clean".equalsIgnoreCase(act)) {
+			doClean(remainingArgs);
+		}
 		else {
 			System.err.println("Unknown action: " + act);
 			usage();
@@ -49,6 +52,7 @@ public class Main {
 		System.err.println("Usage:\n" +
 				"  push [local file path] [bucket] [threads]\n" +
 				"  status [bucket]\n" +
+				"  clean [bucket]\n" +
 				"  url [bucket] [key]"
 				);
 	}
@@ -108,6 +112,17 @@ public class Main {
 		String bucket = args[0];
 		System.err.println("bucket=" + bucket);
 		new Status(this.s3Client, bucket).run();
+	}
+
+	private void doClean (String[] args) {
+		if (args.length < 1) {
+			usage();
+			return;
+		}
+
+		String bucket = args[0];
+		System.err.println("bucket=" + bucket);
+		new Clean(this.s3Client, bucket).run();
 	}
 
 	private static void findProxy (ClientConfiguration clientConfiguration) throws MalformedURLException {
