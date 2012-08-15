@@ -29,11 +29,14 @@ public class Main {
 
 		String act = args[0];
 		String[] remainingArgs = Arrays.copyOfRange(args, 1, args.length);
-		if ("push".equals(act)) {
+		if ("push".equalsIgnoreCase(act)) {
 			doPush(remainingArgs);
 		}
-		else if ("url".equals(act)) {
+		else if ("url".equalsIgnoreCase(act)) {
 			doUrl(remainingArgs);
+		}
+		else if ("status".equalsIgnoreCase(act)) {
+			doStatus(remainingArgs);
 		}
 		else {
 			System.err.println("Unknown action: " + act);
@@ -45,6 +48,7 @@ public class Main {
 	private static void usage () {
 		System.err.println("Usage:\n" +
 				"  push [local file path] [bucket] [threads]\n" +
+				"  status [bucket]\n" +
 				"  url [bucket] [key]"
 				);
 	}
@@ -93,6 +97,17 @@ public class Main {
 		System.err.println("bucket=" + bucket);
 		System.err.println("key=" + key);
 		new PreSignUrl(this.s3Client, bucket, key).run();
+	}
+
+	private void doStatus (String[] args) {
+		if (args.length < 1) {
+			usage();
+			return;
+		}
+
+		String bucket = args[0];
+		System.err.println("bucket=" + bucket);
+		new Status(this.s3Client, bucket).run();
 	}
 
 	private static void findProxy (ClientConfiguration clientConfiguration) throws MalformedURLException {
