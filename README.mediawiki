@@ -5,3 +5,37 @@ A quick and ugly utility for working with AWS S3.
 == Build ==
 
 mvn clean install assembly:single
+
+== Usage ==
+
+<pre>
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar args
+</pre>
+run it with no args to get usage help.
+
+If it is run on a ec2 instance then it will auto detect the roles of the instance, otherwise it can be configured via env-vars. e.g.:
+<pre>
+$ export AWS_ACCESS_KEY_ID="my-id-key" export AWS_SECRET_KEY="my-secret-key"
+</pre>
+
+To upload:
+<pre>
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar push ~/media/file some-bucket 5
+</pre>
+where 5 is number of threads to use when uploading.
+
+To generate pre-auth URLs (valid for 1 hour):
+<pre>
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar url some-bucket /my-file.tar.gz
+</pre>
+Then give the URL it returns to curl, wget, axel or some other download tool.
+
+To get partial-upload stats:
+<pre>
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar status some-bucket
+</pre>
+
+To clean up all incomplete multi-part uploads:
+<pre>
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar clean some-bucket
+</pre>
