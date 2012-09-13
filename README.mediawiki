@@ -4,7 +4,9 @@ A quick and ugly utility for working with AWS S3.
 
 == Build ==
 
+<pre>
 mvn clean install assembly:single
+</pre>
 
 == Usage ==
 
@@ -24,9 +26,9 @@ $ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar push ~/media/file so
 </pre>
 where 5 is number of threads to use when uploading.
 
-To generate pre-auth URLs (valid for 1 hour):
+To generate pre-auth URLs (valid for 3 hour):
 <pre>
-$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar url some-bucket /my-file.tar.gz
+$ java -jar s3toad-0.0.2-SNAPSHOT-jar-with-dependencies.jar url some-bucket /my-file.tar.gz 3
 </pre>
 Then give the URL it returns to curl, wget, axel or some other download tool.
 

@@ -53,7 +53,7 @@ public class Main {
 				"  push [local file path] [bucket] [threads]\n" +
 				"  status [bucket]\n" +
 				"  clean [bucket]\n" +
-				"  url [bucket] [key]"
+				"  url [bucket] [key] (hours)"
 				);
 	}
 
@@ -98,9 +98,11 @@ public class Main {
 
 		String bucket = args[0];
 		String key = args[1];
+		int hours = Integer.parseInt(args.length >= 3 ? args[2] : "1");
 		System.err.println("bucket=" + bucket);
 		System.err.println("key=" + key);
-		new PreSignUrl(this.s3Client, bucket, key).run();
+		System.err.println("hours=" + hours);
+		new PreSignUrl(this.s3Client, bucket, key, hours).run();
 	}
 
 	private void doStatus (String[] args) {
