@@ -54,8 +54,8 @@ public class UploadMulti {
 		PrgTracker tracker = new PrgTracker();
 
 		final long startTime = System.currentTimeMillis();
-		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(this.bucket, this.key);
-		InitiateMultipartUploadResult initResponse = this.s3Client.initiateMultipartUpload(initRequest);
+
+		InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {
@@ -76,8 +76,7 @@ public class UploadMulti {
 			for (Future<UploadPartResult> future : uploadFutures) {
 				partETags.add(future.get().getPartETag());
 			}
-			CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId(), partETags);
-			this.s3Client.completeMultipartUpload(compRequest);
+			completeMultipartUpload(new CompleteMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId(), partETags));
 
 			tracker.print();
 			System.err.println("duration=" + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime) + "s");
@@ -86,6 +85,44 @@ public class UploadMulti {
 			this.s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId()));
 			throw e;
 		}
+	}
+
+	private InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initRequest) {
+		int attempt = 0;
+		while (true) {
+			attempt++;
+			try {
+				return this.s3Client.initiateMultipartUpload(initRequest);
+			}
+			catch (AmazonClientException e) {
+				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
+				System.err.println("initiateMultipartUpload attempt " + attempt + " failed: '" + e.getMessage() + "'.  It will be retried.");
+				sleep(3000L);
+			}
+		}
+	}
+
+	private void completeMultipartUpload(CompleteMultipartUploadRequest compRequest) {
+		int attempt = 0;
+		while (true) {
+			attempt++;
+			try {
+				this.s3Client.completeMultipartUpload(compRequest);
+				return;
+			}
+			catch (AmazonClientException e) {
+				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
+				System.err.println("completeMultipartUpload attempt " + attempt + " failed: '" + e.getMessage() + "'.  It will be retried.");
+				sleep(3000L);
+			}
+		}
+	}
+
+	static void sleep(long s) {
+		try {
+			Thread.sleep(s);
+		}
+		catch (InterruptedException e) { /* Do not care. */}
 	}
 
 	private static class PartUploader implements Callable<UploadPartResult> {
@@ -112,6 +149,7 @@ public class UploadMulti {
 							" with length " + this.uploadRequest.getPartSize() +
 							" attempt " + attempt + " failed: '" + e.getMessage() +
 							"'.  It will be retried.");
+					sleep(3000L);
 				}
 			}
 		}
