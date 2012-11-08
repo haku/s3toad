@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
@@ -23,7 +24,8 @@ import com.amazonaws.services.s3.model.UploadPartResult;
 
 public class UploadMulti {
 
-	private static long PART_SIZE = 64L * 1024L * 1024L;
+	private static final long PART_SIZE = 64L * 1024L * 1024L;
+	private static final int PART_UPLOAD_RETRY_COUNT = 5;
 
 	private final AmazonS3 s3Client;
 	private final File file;
@@ -31,7 +33,7 @@ public class UploadMulti {
 	private String key;
 	private final ExecutorService executor;
 
-	public UploadMulti (AmazonS3 s3Client, File file, String bucket, String key, int threads) {
+	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, int threads) {
 		this.s3Client = s3Client;
 		this.file = file;
 		this.bucket = bucket;
@@ -39,11 +41,11 @@ public class UploadMulti {
 		this.executor = Executors.newFixedThreadPool(threads);
 	}
 
-	public void dispose () {
+	public void dispose() {
 		this.executor.shutdown();
 	}
 
-	public void run () throws Exception {
+	public void run() throws Exception {
 		long contentLength = this.file.length();
 		System.err.println("contentLength=" + contentLength);
 		System.err.println("partsize=" + PART_SIZE);
@@ -57,16 +59,16 @@ public class UploadMulti {
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {
-				PART_SIZE = Math.min(PART_SIZE, (contentLength - filePosition));
+				long partSize = Math.min(PART_SIZE, (contentLength - filePosition));
 				UploadPartRequest uploadRequest = new UploadPartRequest()
 						.withBucketName(this.bucket).withKey(this.key)
 						.withUploadId(initResponse.getUploadId()).withPartNumber(i)
 						.withFileOffset(filePosition)
 						.withFile(this.file)
-						.withPartSize(PART_SIZE)
+						.withPartSize(partSize)
 						.withProgressListener(tracker);
 				uploadFutures.add(this.executor.submit(new PartUploader(this.s3Client, uploadRequest)));
-				filePosition += PART_SIZE;
+				filePosition += partSize;
 			}
 			System.err.println("parts=" + uploadFutures.size());
 
@@ -91,13 +93,30 @@ public class UploadMulti {
 		private final AmazonS3 s3Client;
 		private final UploadPartRequest uploadRequest;
 
-		public PartUploader (AmazonS3 s3Client, UploadPartRequest uploadRequest) {
+		public PartUploader(AmazonS3 s3Client, UploadPartRequest uploadRequest) {
 			this.s3Client = s3Client;
 			this.uploadRequest = uploadRequest;
 		}
 
 		@Override
-		public UploadPartResult call () throws Exception {
+		public UploadPartResult call() throws Exception {
+			int attempt = 0;
+			while (true) {
+				attempt++;
+				try {
+					return uploadPart();
+				}
+				catch (AmazonClientException e) {
+					if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
+					System.err.println("Upload of part " + this.uploadRequest.getPartNumber() +
+							" with length " + this.uploadRequest.getPartSize() +
+							" attempt " + attempt + " failed: '" + e.getMessage() +
+							"'.  It will be retried.");
+				}
+			}
+		}
+
+		private UploadPartResult uploadPart() {
 			final long startTime = System.currentTimeMillis();
 			UploadPartResult res = this.s3Client.uploadPart(this.uploadRequest);
 			final long seconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
@@ -114,10 +133,10 @@ public class UploadMulti {
 		private final AtomicLong total = new AtomicLong(0);
 		private final AtomicLong lastUpdate = new AtomicLong(0);
 
-		public PrgTracker () {}
+		public PrgTracker() {}
 
 		@Override
-		public void progressChanged (ProgressEvent progressEvent) {
+		public void progressChanged(ProgressEvent progressEvent) {
 			this.total.addAndGet(progressEvent.getBytesTransfered());
 			if (shouldPrint()) {
 				synchronized (this.lastUpdate) {
@@ -129,11 +148,11 @@ public class UploadMulti {
 			}
 		}
 
-		private boolean shouldPrint () {
+		private boolean shouldPrint() {
 			return System.currentTimeMillis() - this.lastUpdate.get() > 2000L;
 		}
 
-		public void print () {
+		public void print() {
 			System.err.println("transfered=" + this.total.get());
 		}
 
