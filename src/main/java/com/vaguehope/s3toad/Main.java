@@ -13,7 +13,7 @@ public class Main {
 
 	private final AmazonS3 s3Client;
 
-	public Main () throws MalformedURLException {
+	public Main() throws MalformedURLException {
 		ClientConfiguration clientConfiguration = new ClientConfiguration();
 		findProxy(clientConfiguration);
 		AmazonS3Client s3c = new AmazonS3Client();
@@ -21,7 +21,7 @@ public class Main {
 		this.s3Client = s3c;
 	}
 
-	public void run (String[] args) throws Exception {
+	public void run(String[] args) throws Exception {
 		if (args.length < 1) {
 			usage();
 			return;
@@ -31,6 +31,9 @@ public class Main {
 		String[] remainingArgs = Arrays.copyOfRange(args, 1, args.length);
 		if ("push".equalsIgnoreCase(act)) {
 			doPush(remainingArgs);
+		}
+		else if ("pull".equalsIgnoreCase(act)) {
+			doPull(remainingArgs);
 		}
 		else if ("url".equalsIgnoreCase(act)) {
 			doUrl(remainingArgs);
@@ -48,16 +51,17 @@ public class Main {
 		System.err.println("done.");
 	}
 
-	private static void usage () {
+	private static void usage() {
 		System.err.println("Usage:\n" +
 				"  push [local file path] [bucket] [threads]\n" +
+				"  pull [bucket] [key]\n" +
 				"  status [bucket]\n" +
 				"  clean [bucket]\n" +
 				"  url [bucket] [key] (hours)"
 				);
 	}
 
-	private void doPush (String[] args) throws Exception {
+	private void doPush(String[] args) throws Exception {
 		if (args.length < 3) {
 			usage();
 			return;
@@ -90,7 +94,19 @@ public class Main {
 		}
 	}
 
-	private void doUrl (String[] args) {
+	private void doPull(String[] args) throws Exception {
+		if (args.length < 2) {
+			usage();
+			return;
+		}
+
+		String bucket = args[0];
+		String key = args[1];
+
+		new DownloadSimple(this.s3Client, bucket, key).run();
+	}
+
+	private void doUrl(String[] args) {
 		if (args.length < 2) {
 			usage();
 			return;
@@ -105,7 +121,7 @@ public class Main {
 		new PreSignUrl(this.s3Client, bucket, key, hours).run();
 	}
 
-	private void doStatus (String[] args) {
+	private void doStatus(String[] args) {
 		if (args.length < 1) {
 			usage();
 			return;
@@ -116,7 +132,7 @@ public class Main {
 		new Status(this.s3Client, bucket).run();
 	}
 
-	private void doClean (String[] args) {
+	private void doClean(String[] args) {
 		if (args.length < 1) {
 			usage();
 			return;
@@ -127,8 +143,8 @@ public class Main {
 		new Clean(this.s3Client, bucket).run();
 	}
 
-	private static void findProxy (ClientConfiguration clientConfiguration) throws MalformedURLException {
-		String[] envVars = {"https_proxy", "http_proxy"};
+	private static void findProxy(ClientConfiguration clientConfiguration) throws MalformedURLException {
+		String[] envVars = { "https_proxy", "http_proxy" };
 		for (String var : envVars) {
 			String proxy;
 			if ((proxy = System.getenv(var)) != null) {
@@ -138,7 +154,7 @@ public class Main {
 		}
 	}
 
-	private static void setProxy (ClientConfiguration clientConfiguration, String proxy) throws MalformedURLException {
+	private static void setProxy(ClientConfiguration clientConfiguration, String proxy) throws MalformedURLException {
 		String p = proxy.startsWith("http") ? proxy : "http://" + proxy;
 		URL u = new URL(p);
 		clientConfiguration.setProxyHost(u.getHost());
@@ -147,7 +163,7 @@ public class Main {
 
 //	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	public static void main (String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
 		new Main().run(args);
 	}
 
