@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -17,8 +16,6 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
-import com.amazonaws.services.s3.model.ProgressEvent;
-import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 
@@ -30,7 +27,7 @@ public class UploadMulti {
 	private final AmazonS3 s3Client;
 	private final File file;
 	private final String bucket;
-	private String key;
+	private final String key;
 	private final ExecutorService executor;
 
 	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, int threads) {
@@ -162,36 +159,6 @@ public class UploadMulti {
 					+ " size=" + this.uploadRequest.getPartSize()
 					+ " duration=" + seconds + "s");
 			return res;
-		}
-
-	}
-
-	private static class PrgTracker implements ProgressListener {
-
-		private final AtomicLong total = new AtomicLong(0);
-		private final AtomicLong lastUpdate = new AtomicLong(0);
-
-		public PrgTracker() {}
-
-		@Override
-		public void progressChanged(ProgressEvent progressEvent) {
-			this.total.addAndGet(progressEvent.getBytesTransfered());
-			if (shouldPrint()) {
-				synchronized (this.lastUpdate) {
-					if (shouldPrint()) {
-						print();
-						this.lastUpdate.set(System.currentTimeMillis());
-					}
-				}
-			}
-		}
-
-		private boolean shouldPrint() {
-			return System.currentTimeMillis() - this.lastUpdate.get() > 2000L;
-		}
-
-		public void print() {
-			System.err.println("transfered=" + this.total.get());
 		}
 
 	}
