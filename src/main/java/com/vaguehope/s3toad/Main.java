@@ -29,7 +29,10 @@ public class Main {
 
 		String act = args[0];
 		String[] remainingArgs = Arrays.copyOfRange(args, 1, args.length);
-		if ("push".equalsIgnoreCase(act)) {
+		if ("list".equalsIgnoreCase(act)) {
+			doList(remainingArgs);
+		}
+		else if ("push".equalsIgnoreCase(act)) {
 			doPush(remainingArgs);
 		}
 		else if ("pull".equalsIgnoreCase(act)) {
@@ -53,12 +56,24 @@ public class Main {
 
 	private static void usage() {
 		System.err.println("Usage:\n" +
+				"  list (bucket)\n" +
 				"  push [local file path] [bucket] [threads]\n" +
 				"  pull [bucket] [key]\n" +
 				"  status [bucket]\n" +
 				"  clean [bucket]\n" +
 				"  url [bucket] [key] (hours)"
 				);
+	}
+
+	private void doList(String[] args) throws Exception {
+		if (args.length >= 1) {
+			String bucket = args[0];
+			System.err.println("bucket=" + bucket);
+			new ListBucket(this.s3Client, bucket).run();
+		}
+		else {
+			new ListBuckets(this.s3Client).run();
+		}
 	}
 
 	private void doPush(String[] args) throws Exception {
