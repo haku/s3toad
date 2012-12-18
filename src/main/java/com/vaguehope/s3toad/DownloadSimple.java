@@ -3,6 +3,7 @@ package com.vaguehope.s3toad;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.transfer.Download;
@@ -20,7 +21,7 @@ public class DownloadSimple {
 		this.key = key;
 	}
 
-	public void run() throws Exception {
+	public void run() throws AmazonClientException, InterruptedException {
 		File localFile = new File(new File(this.key).getName());
 		System.err.println("localFile=" + localFile.getAbsolutePath());
 
