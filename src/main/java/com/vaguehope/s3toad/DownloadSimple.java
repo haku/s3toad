@@ -5,7 +5,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 
@@ -22,8 +24,12 @@ public class DownloadSimple {
 	}
 
 	public void run () throws AmazonClientException, InterruptedException {
+		ObjectMetadata metadata = this.s3Client.getObjectMetadata(new GetObjectMetadataRequest(this.bucket, this.key));
+		System.err.println("contentLength=" + metadata.getContentLength());
+
 		File localFile = new File(new File(this.key).getName());
 		System.err.println("localFile=" + localFile.getAbsolutePath());
+
 		TransferManager tm = new TransferManager(this.s3Client);
 		try {
 			PrgTracker tracker = new PrgTracker();
@@ -32,7 +38,6 @@ public class DownloadSimple {
 					new GetObjectRequest(this.bucket, this.key)
 							.withProgressListener(tracker),
 					localFile);
-			System.err.println("contentLength=" + download.getObjectMetadata().getContentLength());
 			download.waitForCompletion();
 			tracker.print();
 			System.err.println("duration=" + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime) + "s");
