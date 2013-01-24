@@ -61,6 +61,9 @@ public class Main {
 			shortHelp(parser, err);
 			return;
 		}
+		catch (AmazonClientException e) {
+			err.println("An AWS exception occured: " + e.getMessage());
+		}
 		catch (Exception e) {
 			err.println("An unhandled error occured.");
 			e.printStackTrace(err);
