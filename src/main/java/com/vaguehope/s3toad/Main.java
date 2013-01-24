@@ -99,7 +99,8 @@ public class Main {
 	private void doPush (Args args) throws Exception  {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
-		args.maxArgs(2);
+		String key = args.getArg(2, false);
+		args.maxArgs(3);
 		final int threads = args.getThreadCount(1);
 
 		File file = new File(filepath);
@@ -107,7 +108,7 @@ public class Main {
 			System.err.println("File not found: " + file.getAbsolutePath());
 			return;
 		}
-		String key = file.getName();
+		if (key == null) key = file.getName();
 
 		System.err.println("file=" + file.getAbsolutePath());
 		System.err.println("bucket=" + bucket);

@@ -26,6 +26,11 @@ $ java -jar s3toad.jar push ~/media/file some-bucket --threads 5
 </pre>
 where 5 is number of threads to use when uploading.
 
+To upload as a new file name:
+<pre>
+$ java -jar s3toad.jar push ~/media/file some-bucket other_file
+</pre>
+
 To generate pre-auth URLs (valid for 3 hour):
 <pre>
 $ java -jar s3toad.jar url some-bucket /my-file.tar.gz --expiry 3
