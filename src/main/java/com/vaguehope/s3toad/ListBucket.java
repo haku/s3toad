@@ -14,10 +14,16 @@ public class ListBucket {
 	}
 
 	public void run() {
+		long totalSize = 0;
+		long objectCount = 0;
+
 		for (S3ObjectSummary o : this.s3Client.listObjects(this.bucket).getObjectSummaries()) {
-			System.err.print("key=");
-			System.err.println(o.getKey());
+			++objectCount;
+			totalSize += o.getSize();
+			System.out.println(String.format("%d\t%d\t%s", o.getLastModified().getTime(), o.getSize(), o.getKey()));
 		}
+
+		System.out.println("bucket=" + bucket + " objects=" + objectCount + " total_size=" + totalSize);
 	}
 
 }

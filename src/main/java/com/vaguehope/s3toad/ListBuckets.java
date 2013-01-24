@@ -13,8 +13,8 @@ public class ListBuckets {
 
 	public void run() {
 		for (Bucket b : this.s3Client.listBuckets()) {
-			System.err.print("bucket=");
-			System.err.println(b.getName());
+			System.out.print("bucket=");
+			System.out.println(b.getName());
 		}
 	}
 
