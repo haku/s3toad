@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.model.UploadPartResult;
 
 public class UploadMulti {
 
-	private static final long PART_SIZE = 64L * 1024L * 1024L;
+	public static final long DEFAULT_CHUNK_SIZE = 64L * 1024L * 1024L;
 	private static final int PART_UPLOAD_RETRY_COUNT = 5;
 
 	private final AmazonS3 s3Client;
@@ -29,13 +29,15 @@ public class UploadMulti {
 	private final String bucket;
 	private final String key;
 	private final ExecutorService executor;
+	private final long chunkSize;
 
-	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, int threads) {
+	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, int threads, long chunkSize) {
 		this.s3Client = s3Client;
 		this.file = file;
 		this.bucket = bucket;
 		this.key = key;
 		this.executor = Executors.newFixedThreadPool(threads);
+		this.chunkSize = chunkSize;
 	}
 
 	public void dispose() {
@@ -45,7 +47,7 @@ public class UploadMulti {
 	public void run() throws Exception {
 		long contentLength = this.file.length();
 		System.err.println("contentLength=" + contentLength);
-		System.err.println("partsize=" + PART_SIZE);
+		System.err.println("chunkSize=" + this.chunkSize);
 
 		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
 		PrgTracker tracker = new PrgTracker();
@@ -53,10 +55,12 @@ public class UploadMulti {
 		final long startTime = System.currentTimeMillis();
 
 		InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
+		System.err.println("uploadId=" + initResponse.getUploadId());
+
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {
-				long partSize = Math.min(PART_SIZE, (contentLength - filePosition));
+				long partSize = Math.min(this.chunkSize, (contentLength - filePosition));
 				UploadPartRequest uploadRequest = new UploadPartRequest()
 						.withBucketName(this.bucket).withKey(this.key)
 						.withUploadId(initResponse.getUploadId()).withPartNumber(i)
