@@ -105,6 +105,7 @@ public class UploadMulti {
 			attempt++;
 			try {
 				this.s3Client.completeMultipartUpload(compRequest);
+				return;
 			}
 			catch (AmazonClientException e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
