@@ -102,6 +102,7 @@ public class Main {
 		String key = args.getArg(2, false);
 		args.maxArgs(3);
 		final int threads = args.getThreadCount(1);
+		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
 		File file = new File(filepath);
 		if (!file.exists()) {
@@ -115,7 +116,7 @@ public class Main {
 		System.err.println("key=" + key);
 		System.err.println("threads=" + threads);
 
-		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads);
+		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize);
 		try {
 			u.run();
 		}

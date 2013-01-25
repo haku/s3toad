@@ -11,6 +11,7 @@ public class Args {
 	@Argument(index = 0, required = true, metaVar = "<action>", usage = Action.USAGE) private Action action;
 	@Argument(index = 1, multiValued = true, metaVar = "ARG") private List<String> args;
 
+	@Option(name = "--chunksize", aliases = "-s", metaVar = "<count>", usage = "chunk size (bytes)") private long chunkSize;
 	@Option(name = "--threads", aliases = "-t", metaVar = "<count>", usage = "thread count") private int threadCount;
 	@Option(name = "--expiry", aliases = "-e", metaVar = "<hours>", usage = "expiry (hours)") private int hours;
 
@@ -35,6 +36,10 @@ public class Args {
 
 	public int getThreadCount (int defVal) {
 		return this.threadCount < 1 ? defVal : this.threadCount;
+	}
+
+	public long getChunkSize(long defVal) {
+		return this.chunkSize < 1 ? defVal : this.chunkSize;
 	}
 
 	public int getHours (int defVal) {
