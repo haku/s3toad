@@ -51,7 +51,7 @@ public class WatchUpload {
 		fm.setRecursive(true);
 		fm.addFile(dirObj);
 		fm.start();
-		LOG.info("Watch started.");
+		LOG.info("watching={}", this.dir.getAbsolutePath());
 		new CountDownLatch(1).await();
 	}
 
