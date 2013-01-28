@@ -51,6 +51,7 @@ public class Args {
 		LIST,
 		PUSH,
 		PULL,
+		WATCH,
 		URL,
 		STATUS,
 		CLEAN;
@@ -58,6 +59,7 @@ public class Args {
 				"help\n" +
 				"list (bucket)\n" +
 				"push [local file path] [bucket]\n" +
+				"watch [local dir path] [bucket]\n" +
 				"pull [bucket] [key]\n" +
 				"url [bucket] [key]\n" +
 				"status [bucket]\n" +
