@@ -2,15 +2,22 @@ package com.vaguehope.s3toad;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+
 import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 
 class PrgTracker implements ProgressListener {
 
+	private static final long PROGRESS_INTERVAL_MILLES = 5000L;
+
+	private final Logger log;
 	private final AtomicLong total = new AtomicLong(0);
 	private final AtomicLong lastUpdate = new AtomicLong(0);
 
-	public PrgTracker() {}
+	public PrgTracker(Logger log) {
+		this.log = log;
+	}
 
 	@Override
 	public void progressChanged(ProgressEvent progressEvent) {
@@ -26,11 +33,11 @@ class PrgTracker implements ProgressListener {
 	}
 
 	private boolean shouldPrint() {
-		return System.currentTimeMillis() - this.lastUpdate.get() > 2000L;
+		return System.currentTimeMillis() - this.lastUpdate.get() > PROGRESS_INTERVAL_MILLES;
 	}
 
 	public void print() {
-		System.err.println("transfered=" + this.total.get());
+		this.log.info("transfered={}", this.total.get());
 	}
 
 }

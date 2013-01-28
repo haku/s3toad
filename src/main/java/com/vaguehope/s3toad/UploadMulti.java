@@ -9,6 +9,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
@@ -20,6 +23,8 @@ import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 
 public class UploadMulti {
+
+	protected static final Logger LOG = LoggerFactory.getLogger(UploadMulti.class);
 
 	public static final long DEFAULT_CHUNK_SIZE = 64L * 1024L * 1024L;
 	private static final int PART_UPLOAD_RETRY_COUNT = 5;
@@ -40,21 +45,30 @@ public class UploadMulti {
 		this.chunkSize = chunkSize;
 	}
 
+	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, ExecutorService executor, long chunkSize) {
+		this.s3Client = s3Client;
+		this.file = file;
+		this.bucket = bucket;
+		this.key = key;
+		this.executor = executor;
+		this.chunkSize = chunkSize;
+	}
+
 	public void dispose() {
 		this.executor.shutdown();
 	}
 
 	public void run() throws Exception {
 		long contentLength = this.file.length();
-		System.err.println("contentLength=" + contentLength);
+		LOG.info("contentLength=" + contentLength);
 
 		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
-		PrgTracker tracker = new PrgTracker();
+		PrgTracker tracker = new PrgTracker(LOG);
 
 		final long startTime = System.currentTimeMillis();
 
 		InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
-		System.err.println("uploadId=" + initResponse.getUploadId());
+		LOG.info("uploadId=" + initResponse.getUploadId());
 
 		try {
 			long filePosition = 0;
@@ -70,7 +84,7 @@ public class UploadMulti {
 				uploadFutures.add(this.executor.submit(new PartUploader(this.s3Client, uploadRequest)));
 				filePosition += partSize;
 			}
-			System.err.println("parts=" + uploadFutures.size());
+			LOG.info("parts={}", uploadFutures.size());
 
 			List<PartETag> partETags = new ArrayList<PartETag>();
 			for (Future<UploadPartResult> future : uploadFutures) {
@@ -78,8 +92,7 @@ public class UploadMulti {
 			}
 			completeMultipartUpload(new CompleteMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId(), partETags));
 
-			tracker.print();
-			System.err.println("duration=" + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime) + "s");
+			LOG.info("duration={}s", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
 		}
 		catch (Exception e) {
 			this.s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId()));
@@ -96,8 +109,8 @@ public class UploadMulti {
 			}
 			catch (AmazonClientException e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
-				System.err.println("initiateMultipartUpload attempt " + attempt + " failed: '" + e.getMessage() + "'.  It will be retried.");
-				sleep(3000L);
+				LOG.info("initiateMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
+				sleep(C.AWS_API_RETRY_DELAY_MILLES);
 			}
 		}
 	}
@@ -112,8 +125,8 @@ public class UploadMulti {
 			}
 			catch (AmazonClientException e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
-				System.err.println("completeMultipartUpload attempt " + attempt + " failed: '" + e.getMessage() + "'.  It will be retried.");
-				sleep(3000L);
+				LOG.info("completeMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
+				sleep(C.AWS_API_RETRY_DELAY_MILLES);
 			}
 		}
 	}
@@ -145,11 +158,9 @@ public class UploadMulti {
 				}
 				catch (AmazonClientException e) {
 					if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
-					System.err.println("Upload of part " + this.uploadRequest.getPartNumber() +
-							" with length " + this.uploadRequest.getPartSize() +
-							" attempt " + attempt + " failed: '" + e.getMessage() +
-							"'.  It will be retried.");
-					sleep(3000L);
+					LOG.info("Upload of part {} with length {} attempt {} failed: '{}'.  It will be retried.",
+							this.uploadRequest.getPartNumber(), this.uploadRequest.getPartSize(), attempt, e.getMessage());
+					sleep(C.AWS_API_RETRY_DELAY_MILLES);
 				}
 			}
 		}
@@ -158,9 +169,7 @@ public class UploadMulti {
 			final long startTime = System.currentTimeMillis();
 			UploadPartResult res = this.s3Client.uploadPart(this.uploadRequest);
 			final long seconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
-			System.err.println("part=" + this.uploadRequest.getPartNumber()
-					+ " size=" + this.uploadRequest.getPartSize()
-					+ " duration=" + seconds + "s");
+			LOG.info("part={} size={} duration={}s", this.uploadRequest.getPartNumber(), this.uploadRequest.getPartSize(), seconds);
 			return res;
 		}
 

@@ -13,6 +13,7 @@ public class Args {
 
 	@Option(name = "--chunksize", aliases = "-s", metaVar = "<count>", usage = "chunk size (bytes)") private long chunkSize;
 	@Option(name = "--threads", aliases = "-t", metaVar = "<count>", usage = "thread count") private int threadCount;
+	@Option(name = "--controls", aliases = "-c", metaVar = "<count>", usage = "control thread count") private int controlCount;
 	@Option(name = "--expiry", aliases = "-e", metaVar = "<hours>", usage = "expiry (hours)") private int hours;
 
 	public Action getAction () {
@@ -36,6 +37,10 @@ public class Args {
 
 	public int getThreadCount (int defVal) {
 		return this.threadCount < 1 ? defVal : this.threadCount;
+	}
+
+	public int getControlThreads (int defVal) {
+		return this.controlCount < 1 ? defVal : this.controlCount;
 	}
 
 	public long getChunkSize(long defVal) {

@@ -4,13 +4,15 @@
 
 	<groupId>com.vaguehope.s3toad</groupId>
 	<artifactId>s3toad</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.6-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>s3toad</name>
 
 	<properties>
 		<java.version>1.6</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<logback.version>1.0.9</logback.version>
+		<slf4j.version>1.7.2</slf4j.version>
 	</properties>
 
 	<prerequisites>
@@ -85,30 +87,24 @@
 			<version>2.0</version>
 		</dependency>
 
-		<!-- Logging. -->
+		<!-- Logging -->
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.2</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.2</version>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
-			<version>1.1.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.2</version>
+			<artifactId>jul-to-slf4j</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 
 	</dependencies>
