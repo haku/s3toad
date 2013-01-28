@@ -15,6 +15,7 @@ public class Args {
 	@Option(name = "--threads", aliases = "-t", metaVar = "<count>", usage = "thread count") private int threadCount;
 	@Option(name = "--controls", aliases = "-c", metaVar = "<count>", usage = "control thread count") private int controlCount;
 	@Option(name = "--expiry", aliases = "-e", metaVar = "<hours>", usage = "expiry (hours)") private int hours;
+	@Option(name = "--delete", usage = "delete files after upload") private boolean delete;
 
 	public Action getAction () {
 		return this.action;
@@ -49,6 +50,10 @@ public class Args {
 
 	public int getHours (int defVal) {
 		return this.hours < 1 ? defVal : this.hours;
+	}
+
+	public boolean getDelete () {
+		return this.delete;
 	}
 
 	public static enum Action {

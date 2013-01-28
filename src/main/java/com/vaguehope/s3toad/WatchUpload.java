@@ -28,11 +28,13 @@ public class WatchUpload {
 	private final ExecutorService controlExecutor;
 	private final ExecutorService workerExecutor;
 	private final long chunkSize;
+	private final boolean deleteAfter;
 
-	public WatchUpload (AmazonS3 s3Client, File file, String bucket, int workerThreads, int controlThreads, long chunkSize) {
+	public WatchUpload (AmazonS3 s3Client, File file, String bucket, int workerThreads, int controlThreads, long chunkSize, boolean deleteAfter) {
 		this.s3Client = s3Client;
 		this.dir = file;
 		this.bucket = bucket;
+		this.deleteAfter = deleteAfter;
 		this.controlExecutor = Executors.newFixedThreadPool(controlThreads, new NamedThreadFactory("ctrl"));
 		this.workerExecutor = Executors.newFixedThreadPool(workerThreads, new NamedThreadFactory("wrkr"));
 		this.chunkSize = chunkSize;
@@ -70,8 +72,7 @@ public class WatchUpload {
 			LOG.info("fileKey={}", key);
 
 			UploadMulti u = new UploadMulti(this.s3Client, file, this.bucket, key, this.workerExecutor, this.chunkSize);
-			UploadCaller c = new UploadCaller(u);
-			this.controlExecutor.submit(c);
+			this.controlExecutor.submit(new UploadCaller(u, this.deleteAfter));
 		}
 		catch (Exception e) {
 			LOG.error("Failed to sechedule upload for created file: {}", event.getFile(), e);
@@ -86,16 +87,27 @@ public class WatchUpload {
 
 	private static class UploadCaller implements Callable<Void> {
 
-		final private UploadMulti u;
+		private final UploadMulti u;
+		private final boolean deleteAfter;
 
-		public UploadCaller (UploadMulti u) {
+		public UploadCaller (UploadMulti u, boolean deleteAfter) {
 			this.u = u;
+			this.deleteAfter = deleteAfter;
 		}
 
 		@Override
 		public Void call () {
 			try {
 				this.u.run();
+				if (this.deleteAfter) {
+					File file = this.u.getFile();
+					if(file.delete()) {
+						LOG.info("deleted={}", file.getAbsolutePath());
+					}
+					else {
+						LOG.error("Failed to delete file: {}", file.getAbsolutePath());
+					}
+				}
 			}
 			catch (Exception e) {
 				LOG.error("Upload failed.", e);

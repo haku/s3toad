@@ -138,6 +138,7 @@ public class Main {
 		final int workerThreads = args.getThreadCount(1);
 		final int controlTrheads = args.getControlThreads(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
+		final boolean deleteAfter = args.getDelete();
 
 		final File dir = new File(dirpath).getCanonicalFile();
 		if (!dir.exists() || !dir.isDirectory()) {
@@ -150,8 +151,9 @@ public class Main {
 		System.err.println("workerThreads=" + workerThreads);
 		System.err.println("controlThreads=" + controlTrheads);
 		System.err.println("chunkSize=" + chunkSize);
+		System.err.println("deleteAfter=" + deleteAfter);
 
-		WatchUpload u = new WatchUpload(this.s3Client, dir, bucket, workerThreads, controlTrheads, chunkSize);
+		WatchUpload u = new WatchUpload(this.s3Client, dir, bucket, workerThreads, controlTrheads, chunkSize, deleteAfter);
 		try {
 			u.run();
 		}

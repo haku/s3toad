@@ -58,6 +58,10 @@ public class UploadMulti {
 		this.executor.shutdown();
 	}
 
+	public File getFile () {
+		return this.file;
+	}
+
 	public void run() throws Exception {
 		long contentLength = this.file.length();
 		LOG.info("contentLength=" + contentLength);

@@ -21,8 +21,8 @@ where 5 is number of threads to use when uploading.
 To upload as a new file name:
  $ java -jar s3toad.jar push ~/media/file some-bucket other_file
 
-NOT IMPLEMENTED: To watch a drop-directory and its sub-directories and DELETE the files after successful upload:
- $ java -jar s3toad.jar watch ~/media some-bucket --threads 5
+To watch a drop-directory and its sub-directories and DELETE the files after successful upload:
+ $ java -jar s3toad.jar watch ~/media some-bucket --threads 5 --delete
 where 5 is number of threads to use when uploading.
 
 To generate pre-auth URLs (valid for 3 hour):
