@@ -67,9 +67,9 @@ public class WatchUpload {
 				return;
 			}
 
-			LOG.info("fileCreated={}", file.getAbsolutePath());
+			LOG.info("created={}", file.getAbsolutePath());
 			final String key = getRelativePath(this.dir, file);
-			LOG.info("fileKey={}", key);
+			LOG.info("key={}", key);
 
 			UploadMulti u = new UploadMulti(this.s3Client, file, this.bucket, key, this.workerExecutor, this.chunkSize);
 			this.controlExecutor.submit(new UploadCaller(u, this.deleteAfter));
