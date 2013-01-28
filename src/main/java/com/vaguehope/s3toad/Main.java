@@ -12,12 +12,14 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.vaguehope.s3toad.util.LogHelper;
 
 public class Main {
 
 	private final AmazonS3 s3Client;
 
 	public Main () throws MalformedURLException {
+		LogHelper.bridgeJul();
 		ClientConfiguration clientConfiguration = new ClientConfiguration();
 		findProxy(clientConfiguration);
 		AmazonS3Client s3c = new AmazonS3Client();
@@ -133,10 +135,11 @@ public class Main {
 		final String dirpath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		args.maxArgs(2);
-		final int threads = args.getThreadCount(1);
+		final int workerThreads = args.getThreadCount(1);
+		final int controlTrheads = args.getControlThreads(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
-		final File dir = new File(dirpath);
+		final File dir = new File(dirpath).getCanonicalFile();
 		if (!dir.exists() || !dir.isDirectory()) {
 			System.err.println("Dir not found: " + dir.getAbsolutePath());
 			return;
@@ -144,10 +147,11 @@ public class Main {
 
 		System.err.println("dir=" + dir.getAbsolutePath());
 		System.err.println("bucket=" + bucket);
-		System.err.println("threads=" + threads);
+		System.err.println("workerThreads=" + workerThreads);
+		System.err.println("controlThreads=" + controlTrheads);
 		System.err.println("chunkSize=" + chunkSize);
 
-		WatchUpload u = new WatchUpload(this.s3Client, dir, bucket, threads, chunkSize);
+		WatchUpload u = new WatchUpload(this.s3Client, dir, bucket, workerThreads, controlTrheads, chunkSize);
 		try {
 			u.run();
 		}
