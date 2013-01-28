@@ -1,4 +1,4 @@
-package com.vaguehope.s3toad;
+package com.vaguehope.s3toad.tasks;
 
 import java.io.File;
 import java.util.concurrent.Callable;

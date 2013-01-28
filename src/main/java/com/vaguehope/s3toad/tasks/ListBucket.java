@@ -1,4 +1,4 @@
-package com.vaguehope.s3toad;
+package com.vaguehope.s3toad.tasks;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -23,7 +23,7 @@ public class ListBucket {
 			System.out.println(String.format("%d\t%d\t%s", o.getLastModified().getTime(), o.getSize(), o.getKey()));
 		}
 
-		System.out.println("bucket=" + bucket + " objects=" + objectCount + " total_size=" + totalSize);
+		System.out.println("bucket=" + this.bucket + " objects=" + objectCount + " total_size=" + totalSize);
 	}
 
 }

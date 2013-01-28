@@ -1,4 +1,4 @@
-package com.vaguehope.s3toad;
+package com.vaguehope.s3toad.tasks;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +13,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.vaguehope.s3toad.util.PrgTracker;
 
 public class DownloadSimple {
 

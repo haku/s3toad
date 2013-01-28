@@ -12,6 +12,14 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.vaguehope.s3toad.tasks.Clean;
+import com.vaguehope.s3toad.tasks.DownloadSimple;
+import com.vaguehope.s3toad.tasks.ListBucket;
+import com.vaguehope.s3toad.tasks.ListBuckets;
+import com.vaguehope.s3toad.tasks.PreSignUrl;
+import com.vaguehope.s3toad.tasks.Status;
+import com.vaguehope.s3toad.tasks.UploadMulti;
+import com.vaguehope.s3toad.tasks.WatchUpload;
 import com.vaguehope.s3toad.util.LogHelper;
 
 public class Main {

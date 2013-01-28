@@ -1,4 +1,4 @@
-package com.vaguehope.s3toad;
+package com.vaguehope.s3toad.tasks;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Bucket;

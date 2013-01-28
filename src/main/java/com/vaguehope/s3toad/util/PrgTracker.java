@@ -1,4 +1,4 @@
-package com.vaguehope.s3toad;
+package com.vaguehope.s3toad.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 
-class PrgTracker implements ProgressListener {
+public class PrgTracker implements ProgressListener {
 
 	private static final long PROGRESS_INTERVAL_MILLES = 5000L;
 
