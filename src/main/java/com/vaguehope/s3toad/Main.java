@@ -39,6 +39,9 @@ public class Main {
 				case PUSH:
 					doPush(args);
 					break;
+				case WATCH:
+					doWatch(args);
+					break;
 				case PULL:
 					doPull(args);
 					break;
@@ -104,7 +107,7 @@ public class Main {
 		final int threads = args.getThreadCount(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
-		File file = new File(filepath);
+		final File file = new File(filepath);
 		if (!file.exists()) {
 			System.err.println("File not found: " + file.getAbsolutePath());
 			return;
@@ -115,8 +118,36 @@ public class Main {
 		System.err.println("bucket=" + bucket);
 		System.err.println("key=" + key);
 		System.err.println("threads=" + threads);
+		System.err.println("chunkSize=" + chunkSize);
 
 		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize);
+		try {
+			u.run();
+		}
+		finally {
+			u.dispose();
+		}
+	}
+
+	private void doWatch (Args args) throws Exception  {
+		final String dirpath = args.getArg(0, true);
+		final String bucket = args.getArg(1, true);
+		args.maxArgs(2);
+		final int threads = args.getThreadCount(1);
+		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
+
+		final File dir = new File(dirpath);
+		if (!dir.exists() || !dir.isDirectory()) {
+			System.err.println("Dir not found: " + dir.getAbsolutePath());
+			return;
+		}
+
+		System.err.println("dir=" + dir.getAbsolutePath());
+		System.err.println("bucket=" + bucket);
+		System.err.println("threads=" + threads);
+		System.err.println("chunkSize=" + chunkSize);
+
+		WatchUpload u = new WatchUpload(this.s3Client, dir, bucket, threads, chunkSize);
 		try {
 			u.run();
 		}

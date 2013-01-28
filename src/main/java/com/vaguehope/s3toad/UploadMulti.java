@@ -47,7 +47,6 @@ public class UploadMulti {
 	public void run() throws Exception {
 		long contentLength = this.file.length();
 		System.err.println("contentLength=" + contentLength);
-		System.err.println("chunkSize=" + this.chunkSize);
 
 		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
 		PrgTracker tracker = new PrgTracker();
