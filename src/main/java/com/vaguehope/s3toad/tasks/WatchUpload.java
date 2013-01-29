@@ -82,7 +82,7 @@ public class WatchUpload {
 			LOG.info("key={}", key);
 
 			UploadMulti u = new UploadMulti(this.s3Client, file, this.bucket, key, this.workerExecutor, this.chunkSize);
-			this.controlExecutor.submit(new UploadCaller(u, this.deleteAfter));
+			this.controlExecutor.submit(new UploadCaller(u, this.deleteAfter, this.controlExecutor));
 		}
 		catch (Exception e) {
 			LOG.error("Failed to sechedule upload for created file: {}", event.getFile(), e);
@@ -97,20 +97,22 @@ public class WatchUpload {
 
 	private static class UploadCaller implements Callable<Void> {
 
-		private final UploadMulti u;
+		private final UploadMulti upload;
 		private final boolean deleteAfter;
+		private final ExecutorService controlExecutor;
 
-		public UploadCaller (UploadMulti u, boolean deleteAfter) {
-			this.u = u;
+		public UploadCaller (UploadMulti upload, boolean deleteAfter, ExecutorService controlExecutor) {
+			this.upload = upload;
 			this.deleteAfter = deleteAfter;
+			this.controlExecutor = controlExecutor;
 		}
 
 		@Override
 		public Void call () {
 			try {
-				this.u.run();
+				this.upload.run();
 				if (this.deleteAfter) {
-					File file = this.u.getFile();
+					File file = this.upload.getFile();
 					if(file.delete()) {
 						LOG.info("deleted={}", file.getAbsolutePath());
 					}
@@ -120,7 +122,8 @@ public class WatchUpload {
 				}
 			}
 			catch (Exception e) {
-				LOG.error("Upload failed.", e);
+				LOG.warn("Upload failed.  It will be rescheduled.", e);
+				this.controlExecutor.submit(this);
 			}
 			return null;
 		}
