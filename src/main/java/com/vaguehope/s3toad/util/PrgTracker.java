@@ -9,7 +9,7 @@ import com.amazonaws.services.s3.model.ProgressListener;
 
 public class PrgTracker implements ProgressListener {
 
-	private static final long PROGRESS_INTERVAL_MILLES = 5000L;
+	private static final long PROGRESS_INTERVAL_MILLES = 10000L;
 
 	private final Logger log;
 	private final AtomicLong total = new AtomicLong(0);
