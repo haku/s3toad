@@ -62,6 +62,16 @@ public class WatchUpload {
 			final FileObject fileObj = event.getFile();
 			final File file = new File(fileObj.getURL().getPath()).getCanonicalFile();
 
+			if (!file.isFile()) {
+				LOG.info("Ignoring directory: {}", file.getAbsoluteFile());
+				return;
+			}
+
+			if (file.getName().toLowerCase().endsWith(".part")) {
+				LOG.info("Ignoring .part file: {}", file.getAbsoluteFile());
+				return;
+			}
+
 			if (file.length() <= 0) {
 				LOG.info("Ignoring zero length file: {}", file.getAbsoluteFile());
 				return;
