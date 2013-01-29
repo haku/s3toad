@@ -1,6 +1,9 @@
 package com.vaguehope.s3toad.tasks;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -55,17 +58,39 @@ public class WatchUpload {
 		fm.start();
 		LOG.info("watching={}", this.dir.getAbsolutePath());
 
+		scanExisting();
+
 		while (true) {
 			LOG.info("controlExecutorDepth={} workerExecutorDepth={}", this.controlExecutor.getQueue().size(), this.workerExecutor.getQueue().size());
 			ThreadHelper.sleepQuietly(10000L);
 		}
 	}
 
-	protected void fileCreated(FileChangeEvent event) {
-		try {
-			final FileObject fileObj = event.getFile();
-			final File file = new File(fileObj.getURL().getPath()).getCanonicalFile();
+	private void scanExisting() throws IOException {
+		int count = 0;
+		final Queue<File> dirs = new LinkedList<File>();
+		dirs.add(this.dir);
+		while (!dirs.isEmpty()) {
+			File subDir = dirs.poll();
+			if (!subDir.exists()) continue;
+			final File[] children = subDir.listFiles();
+			if (children != null) {
+				for (final File child : children) {
+					if (child.isDirectory()) {
+						dirs.add(child);
+					}
+					else if (child.isFile()) {
+						fileCreated(child.getCanonicalFile());
+						count += 1;
+					}
+				}
+			}
+		}
+		LOG.info("existing={}", count);
+	}
 
+	protected void fileCreated(File file) {
+		try {
 			if (!file.isFile()) {
 				LOG.info("Ignoring directory: {}", file.getAbsoluteFile());
 				return;
@@ -88,7 +113,7 @@ public class WatchUpload {
 			this.controlExecutor.submit(new UploadCaller(u, this.deleteAfter, this.controlExecutor));
 		}
 		catch (Exception e) {
-			LOG.error("Failed to sechedule upload for created file: {}", event.getFile(), e);
+			LOG.error("Failed to sechedule upload for created file: {}", file.getAbsolutePath(), e);
 		}
 	}
 
@@ -143,7 +168,7 @@ public class WatchUpload {
 
 		@Override
 		public void fileCreated(FileChangeEvent event) throws Exception {
-			this.watchUpload.fileCreated(event);
+			this.watchUpload.fileCreated(new File(event.getFile().getURL().getPath()).getCanonicalFile());
 		}
 
 		@Override
