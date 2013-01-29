@@ -69,18 +69,11 @@ public class UploadMulti {
 			LOG.warn("vanished={}", this.file.getAbsolutePath());
 			return;
 		}
-
-		long contentLength = this.file.length();
-		LOG.info("contentLength={}", contentLength);
-
-		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
-		PrgTracker tracker = new PrgTracker(LOG);
-
 		final long startTime = System.currentTimeMillis();
-
-		InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
-		LOG.info("uploadId={}", initResponse.getUploadId());
-
+		final PrgTracker tracker = new PrgTracker(LOG);
+		final long contentLength = this.file.length();
+		final List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
+		final InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {
@@ -95,7 +88,6 @@ public class UploadMulti {
 				uploadFutures.add(this.executor.submit(new PartUploader(this.s3Client, uploadRequest)));
 				filePosition += partSize;
 			}
-			LOG.info("parts={}", uploadFutures.size());
 
 			List<PartETag> partETags = new ArrayList<PartETag>();
 			for (Future<UploadPartResult> future : uploadFutures) {
@@ -103,7 +95,8 @@ public class UploadMulti {
 			}
 			completeMultipartUpload(new CompleteMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId(), partETags));
 
-			LOG.info("duration={}s", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+			LOG.info("contentLength={} parts={} duration={}s",
+					uploadFutures.size(), contentLength, TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
 		}
 		catch (Exception e) {
 			this.s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId()));
