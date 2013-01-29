@@ -65,8 +65,13 @@ public class UploadMulti {
 	}
 
 	public void run() throws Exception {
+		if (!this.file.exists()) {
+			LOG.warn("vanished={}", this.file.getAbsolutePath());
+			return;
+		}
+
 		long contentLength = this.file.length();
-		LOG.info("contentLength=" + contentLength);
+		LOG.info("contentLength={}", contentLength);
 
 		List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
 		PrgTracker tracker = new PrgTracker(LOG);
@@ -74,7 +79,7 @@ public class UploadMulti {
 		final long startTime = System.currentTimeMillis();
 
 		InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
-		LOG.info("uploadId=" + initResponse.getUploadId());
+		LOG.info("uploadId={}", initResponse.getUploadId());
 
 		try {
 			long filePosition = 0;
