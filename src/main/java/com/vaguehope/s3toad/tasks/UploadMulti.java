@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
@@ -111,14 +110,14 @@ public class UploadMulti {
 		}
 	}
 
-	private InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initRequest) {
+	private InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initRequest) throws Exception {
 		int attempt = 0;
 		while (true) {
 			attempt++;
 			try {
 				return this.s3Client.initiateMultipartUpload(initRequest);
 			}
-			catch (AmazonClientException e) {
+			catch (Exception e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 				LOG.info("initiateMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
 				sleep(C.AWS_API_RETRY_DELAY_MILLES);
@@ -126,7 +125,7 @@ public class UploadMulti {
 		}
 	}
 
-	private void completeMultipartUpload(CompleteMultipartUploadRequest compRequest) {
+	private void completeMultipartUpload(CompleteMultipartUploadRequest compRequest) throws Exception {
 		int attempt = 0;
 		while (true) {
 			attempt++;
@@ -134,7 +133,7 @@ public class UploadMulti {
 				this.s3Client.completeMultipartUpload(compRequest);
 				return;
 			}
-			catch (AmazonClientException e) {
+			catch (Exception e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 				LOG.info("completeMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
 				sleep(C.AWS_API_RETRY_DELAY_MILLES);
@@ -167,7 +166,7 @@ public class UploadMulti {
 				try {
 					return uploadPart();
 				}
-				catch (AmazonClientException e) {
+				catch (Exception e) {
 					if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 					LOG.info("Upload of part {} with length {} attempt {} failed: '{}'.  It will be retried.",
 							this.uploadRequest.getPartNumber(), this.uploadRequest.getPartSize(), attempt, e.getMessage());
