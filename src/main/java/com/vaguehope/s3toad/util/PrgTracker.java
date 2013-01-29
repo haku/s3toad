@@ -37,7 +37,8 @@ public class PrgTracker implements ProgressListener {
 	}
 
 	public void print() {
-		this.log.info("transfered={}", this.total.get());
+		long t = this.total.get();
+		if (t > 0) this.log.info("transfered={}", t);
 	}
 
 }
