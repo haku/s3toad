@@ -96,7 +96,7 @@ public class UploadMulti {
 			completeMultipartUpload(new CompleteMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId(), partETags));
 
 			LOG.info("contentLength={} parts={} duration={}s",
-					uploadFutures.size(), contentLength, TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+					contentLength, uploadFutures.size(), TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
 		}
 		catch (Exception e) {
 			this.s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(this.bucket, this.key, initResponse.getUploadId()));
