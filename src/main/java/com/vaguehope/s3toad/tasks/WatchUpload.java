@@ -2,9 +2,8 @@ package com.vaguehope.s3toad.tasks;
 
 import java.io.File;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.commons.vfs2.FileChangeEvent;
 import org.apache.commons.vfs2.FileListener;
@@ -16,7 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.vaguehope.s3toad.util.NamedThreadFactory;
+import com.vaguehope.s3toad.util.ExecutorFactory;
+import com.vaguehope.s3toad.util.ThreadHelper;
 
 public class WatchUpload {
 
@@ -25,27 +25,27 @@ public class WatchUpload {
 	private final AmazonS3 s3Client;
 	private final File dir;
 	private final String bucket;
-	private final ExecutorService controlExecutor;
-	private final ExecutorService workerExecutor;
+	private final ThreadPoolExecutor controlExecutor;
+	private final ThreadPoolExecutor workerExecutor;
 	private final long chunkSize;
 	private final boolean deleteAfter;
 
-	public WatchUpload (AmazonS3 s3Client, File file, String bucket, int workerThreads, int controlThreads, long chunkSize, boolean deleteAfter) {
+	public WatchUpload(AmazonS3 s3Client, File file, String bucket, int workerThreads, int controlThreads, long chunkSize, boolean deleteAfter) {
 		this.s3Client = s3Client;
 		this.dir = file;
 		this.bucket = bucket;
 		this.deleteAfter = deleteAfter;
-		this.controlExecutor = Executors.newFixedThreadPool(controlThreads, new NamedThreadFactory("ctrl"));
-		this.workerExecutor = Executors.newFixedThreadPool(workerThreads, new NamedThreadFactory("wrkr"));
+		this.controlExecutor = ExecutorFactory.newFixedThreadPool("ctrl", controlThreads);
+		this.workerExecutor = ExecutorFactory.newFixedThreadPool("wrkr", workerThreads);
 		this.chunkSize = chunkSize;
 	}
 
-	public void dispose () {
+	public void dispose() {
 		this.controlExecutor.shutdown();
 		this.workerExecutor.shutdown();
 	}
 
-	public void run () throws Exception {
+	public void run() throws Exception {
 		final FileSystemManager fsm = VFS.getManager();
 		final FileObject dirObj = fsm.toFileObject(this.dir);
 
@@ -54,10 +54,14 @@ public class WatchUpload {
 		fm.addFile(dirObj);
 		fm.start();
 		LOG.info("watching={}", this.dir.getAbsolutePath());
-		new CountDownLatch(1).await();
+
+		while (true) {
+			LOG.info("controlExecutorDepth={} workerExecutorDepth={}", this.controlExecutor.getQueue().size(), this.workerExecutor.getQueue().size());
+			ThreadHelper.sleepQuietly(10000L);
+		}
 	}
 
-	protected void fileCreated (FileChangeEvent event) {
+	protected void fileCreated(FileChangeEvent event) {
 		try {
 			final FileObject fileObj = event.getFile();
 			final File file = new File(fileObj.getURL().getPath()).getCanonicalFile();
@@ -89,7 +93,7 @@ public class WatchUpload {
 		}
 	}
 
-	private static String getRelativePath (File dir, File file) {
+	private static String getRelativePath(File dir, File file) {
 		String base = dir.getAbsolutePath();
 		String path = file.getAbsolutePath();
 		return path.substring(base.length() + (base.endsWith("/") ? 0 : 1));
@@ -101,19 +105,19 @@ public class WatchUpload {
 		private final boolean deleteAfter;
 		private final ExecutorService controlExecutor;
 
-		public UploadCaller (UploadMulti upload, boolean deleteAfter, ExecutorService controlExecutor) {
+		public UploadCaller(UploadMulti upload, boolean deleteAfter, ExecutorService controlExecutor) {
 			this.upload = upload;
 			this.deleteAfter = deleteAfter;
 			this.controlExecutor = controlExecutor;
 		}
 
 		@Override
-		public Void call () {
+		public Void call() {
 			try {
 				this.upload.run();
 				if (this.deleteAfter) {
 					File file = this.upload.getFile();
-					if(file.delete()) {
+					if (file.delete()) {
 						LOG.info("deleted={}", file.getAbsolutePath());
 					}
 					else {
@@ -134,22 +138,22 @@ public class WatchUpload {
 
 		final private WatchUpload watchUpload;
 
-		public MyFileListener (WatchUpload watchUpload) {
+		public MyFileListener(WatchUpload watchUpload) {
 			this.watchUpload = watchUpload;
 		}
 
 		@Override
-		public void fileCreated (FileChangeEvent event) throws Exception {
+		public void fileCreated(FileChangeEvent event) throws Exception {
 			this.watchUpload.fileCreated(event);
 		}
 
 		@Override
-		public void fileDeleted (FileChangeEvent event) throws Exception {
+		public void fileDeleted(FileChangeEvent event) throws Exception {
 			// Unused.
 		}
 
 		@Override
-		public void fileChanged (FileChangeEvent event) throws Exception {
+		public void fileChanged(FileChangeEvent event) throws Exception {
 			// Unused.
 		}
 
