@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 import com.vaguehope.s3toad.C;
 import com.vaguehope.s3toad.util.PrgTracker;
+import com.vaguehope.s3toad.util.ThreadHelper;
 
 public class UploadMulti {
 
@@ -120,7 +121,7 @@ public class UploadMulti {
 			catch (Exception e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 				LOG.info("initiateMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
-				sleep(C.AWS_API_RETRY_DELAY_MILLES);
+				ThreadHelper.sleepQuietly(C.AWS_API_RETRY_DELAY_MILLES);
 			}
 		}
 	}
@@ -136,16 +137,9 @@ public class UploadMulti {
 			catch (Exception e) {
 				if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 				LOG.info("completeMultipartUpload attempt {} failed: '{}'.  It will be retried.", attempt, e.getMessage());
-				sleep(C.AWS_API_RETRY_DELAY_MILLES);
+				ThreadHelper.sleepQuietly(C.AWS_API_RETRY_DELAY_MILLES);
 			}
 		}
-	}
-
-	static void sleep(long s) {
-		try {
-			Thread.sleep(s);
-		}
-		catch (InterruptedException e) { /* Do not care. */}
 	}
 
 	private static class PartUploader implements Callable<UploadPartResult> {
@@ -170,7 +164,7 @@ public class UploadMulti {
 					if (attempt >= PART_UPLOAD_RETRY_COUNT) throw e;
 					LOG.info("Upload of part {} with length {} attempt {} failed: '{}'.  It will be retried.",
 							this.uploadRequest.getPartNumber(), this.uploadRequest.getPartSize(), attempt, e.getMessage());
-					sleep(C.AWS_API_RETRY_DELAY_MILLES);
+					ThreadHelper.sleepQuietly(C.AWS_API_RETRY_DELAY_MILLES);
 				}
 			}
 		}
