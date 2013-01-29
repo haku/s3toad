@@ -1,6 +1,8 @@
 package com.vaguehope.s3toad.tasks;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class ListBucket {
@@ -17,13 +19,19 @@ public class ListBucket {
 		long totalSize = 0;
 		long objectCount = 0;
 
-		for (S3ObjectSummary o : this.s3Client.listObjects(this.bucket).getObjectSummaries()) {
-			++objectCount;
-			totalSize += o.getSize();
-			System.out.println(String.format("%d\t%d\t%s", o.getLastModified().getTime(), o.getSize(), o.getKey()));
+		ObjectListing objectListing = this.s3Client.listObjects(this.bucket);
+		while (true) {
+			for (S3ObjectSummary o : objectListing.getObjectSummaries()) {
+				++objectCount;
+				totalSize += o.getSize();
+				System.out.println(String.format("%d\t%d\t%s", o.getLastModified().getTime(), o.getSize(), o.getKey()));
+			}
+			if (objectListing.getNextMarker() == null) break;
+			objectListing = this.s3Client.listObjects(new ListObjectsRequest()
+					.withBucketName(this.bucket)
+					.withMarker(objectListing.getNextMarker()));
 		}
 
 		System.out.println("bucket=" + this.bucket + " objects=" + objectCount + " total_size=" + totalSize);
 	}
-
 }
