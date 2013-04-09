@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.vaguehope.s3toad.tasks.Clean;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
+import com.vaguehope.s3toad.tasks.EmptyBucket;
 import com.vaguehope.s3toad.tasks.ListBucket;
 import com.vaguehope.s3toad.tasks.ListBuckets;
 import com.vaguehope.s3toad.tasks.PreSignUrl;
@@ -35,7 +36,7 @@ public class Main {
 		this.s3Client = s3c;
 	}
 
-	public void run (String[] rawArgs)  {
+	public void run (final String[] rawArgs)  {
 		//final PrintStream out = System.out;
 		final PrintStream err = System.err;
 		final Args args = new Args();
@@ -64,6 +65,9 @@ public class Main {
 				case CLEAN:
 					doClean(args);
 					break;
+				case EMPTY:
+				    doEmpty(args);
+				    break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -84,20 +88,20 @@ public class Main {
 		err.println("done.");
 	}
 
-	private static void shortHelp (CmdLineParser parser, PrintStream ps) {
+	private static void shortHelp (final CmdLineParser parser, final PrintStream ps) {
 		ps.print("Usage: ");
 		ps.print(C.APPNAME);
 		parser.printSingleLineUsage(System.err);
 		ps.println();
 	}
 
-	private static void fullHelp (CmdLineParser parser, PrintStream ps) {
+	private static void fullHelp (final CmdLineParser parser, final PrintStream ps) {
 		shortHelp(parser, ps);
 		parser.printUsage(ps);
 		ps.println();
 	}
 
-	private void doList (Args args) throws CmdLineException  {
+	private void doList (final Args args) throws CmdLineException  {
 		String bucket = args.getArg(0, false);
 		args.maxArgs(1);
 		if (bucket != null) {
@@ -109,7 +113,7 @@ public class Main {
 		}
 	}
 
-	private void doPush (Args args) throws Exception  {
+	private void doPush (final Args args) throws Exception  {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
@@ -139,7 +143,7 @@ public class Main {
 		}
 	}
 
-	private void doWatch (Args args) throws Exception  {
+	private void doWatch (final Args args) throws Exception  {
 		final String dirpath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		args.maxArgs(2);
@@ -170,7 +174,7 @@ public class Main {
 		}
 	}
 
-	private void doPull (Args args) throws CmdLineException, AmazonClientException, InterruptedException  {
+	private void doPull (final Args args) throws CmdLineException, AmazonClientException, InterruptedException  {
 		final String bucket = args.getArg(0, true);
 		final String key = args.getArg(1, true);
 		args.maxArgs(2);
@@ -181,7 +185,7 @@ public class Main {
 		new DownloadSimple(this.s3Client, bucket, key).run();
 	}
 
-	private void doUrl (Args args) throws CmdLineException {
+	private void doUrl (final Args args) throws CmdLineException {
 		final String bucket = args.getArg(0, true);
 		final String key = args.getArg(1, true);
 		args.maxArgs(2);
@@ -194,21 +198,28 @@ public class Main {
 		new PreSignUrl(this.s3Client, bucket, key, hours).run();
 	}
 
-	private void doStatus (Args args) throws CmdLineException {
+	private void doStatus (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, true);
 		args.maxArgs(1);
 		System.err.println("bucket=" + bucket);
 		new Status(this.s3Client, bucket).run();
 	}
 
-	private void doClean (Args args) throws CmdLineException {
+	private void doClean (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, true);
 		args.maxArgs(1);
 		System.err.println("bucket=" + bucket);
 		new Clean(this.s3Client, bucket).run();
 	}
 
-	private static void findProxy (ClientConfiguration clientConfiguration) throws MalformedURLException {
+	private void doEmpty (final Args args) throws CmdLineException {
+	    String bucket = args.getArg(0, true);
+	    args.maxArgs(1);
+	    System.err.println("bucket=" + bucket);
+	    new EmptyBucket(this.s3Client, bucket).run();
+	}
+
+	private static void findProxy (final ClientConfiguration clientConfiguration) throws MalformedURLException {
 		String[] envVars = { "https_proxy", "http_proxy" };
 		for (String var : envVars) {
 			String proxy;
@@ -219,7 +230,7 @@ public class Main {
 		}
 	}
 
-	private static void setProxy (ClientConfiguration clientConfiguration, String proxy) throws MalformedURLException {
+	private static void setProxy (final ClientConfiguration clientConfiguration, final String proxy) throws MalformedURLException {
 		String p = proxy.startsWith("http") ? proxy : "http://" + proxy;
 		URL u = new URL(p);
 		clientConfiguration.setProxyHost(u.getHost());
@@ -228,7 +239,7 @@ public class Main {
 
 //	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	public static void main (String[] args) throws MalformedURLException  {
+	public static void main (final String[] args) throws MalformedURLException  {
 		new Main().run(args);
 	}
 
