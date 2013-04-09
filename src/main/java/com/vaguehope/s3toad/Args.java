@@ -21,34 +21,34 @@ public class Args {
 		return this.action;
 	}
 
-	public List<String> getArgs (boolean required) throws CmdLineException {
+	public List<String> getArgs (final boolean required) throws CmdLineException {
 		if (required && (this.args == null || this.args.isEmpty())) throw new CmdLineException(null, "At least one arg is required.");
 		return this.args;
 	}
 
-	public String getArg (int index, boolean required) throws CmdLineException {
+	public String getArg (final int index, final boolean required) throws CmdLineException {
 		String value = this.args != null && index < this.args.size() ? this.args.get(index) : null;
 		if (required && value == null) throw new CmdLineException(null, "Arg " + index + " is required.");
 		return value;
 	}
 
-	public void maxArgs (int count) throws CmdLineException {
+	public void maxArgs (final int count) throws CmdLineException {
 		if (this.args != null && this.args.size() > count) throw new CmdLineException(null, "Max arg count is  " + count + ".");
 	}
 
-	public int getThreadCount (int defVal) {
+	public int getThreadCount (final int defVal) {
 		return this.threadCount < 1 ? defVal : this.threadCount;
 	}
 
-	public int getControlThreads (int defVal) {
+	public int getControlThreads (final int defVal) {
 		return this.controlCount < 1 ? defVal : this.controlCount;
 	}
 
-	public long getChunkSize(long defVal) {
+	public long getChunkSize(final long defVal) {
 		return this.chunkSize < 1 ? defVal : this.chunkSize;
 	}
 
-	public int getHours (int defVal) {
+	public int getHours (final int defVal) {
 		return this.hours < 1 ? defVal : this.hours;
 	}
 
@@ -64,7 +64,8 @@ public class Args {
 		WATCH,
 		URL,
 		STATUS,
-		CLEAN;
+		CLEAN,
+		EMPTY;
 		private static final String USAGE = "" +
 				"help\n" +
 				"list (bucket)\n" +
@@ -73,7 +74,8 @@ public class Args {
 				"pull [bucket] [key]\n" +
 				"url [bucket] [key]\n" +
 				"status [bucket]\n" +
-				"clean [bucket]";
+				"clean [bucket]\n" +
+				"empty [bucket]";
 	}
 
 }
