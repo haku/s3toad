@@ -38,7 +38,7 @@ public class UploadMulti {
 	private final ExecutorService executor;
 	private final long chunkSize;
 
-	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, int threads, long chunkSize) {
+	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final int threads, final long chunkSize) {
 		this.s3Client = s3Client;
 		this.file = file;
 		this.bucket = bucket;
@@ -47,7 +47,7 @@ public class UploadMulti {
 		this.chunkSize = chunkSize;
 	}
 
-	public UploadMulti(AmazonS3 s3Client, File file, String bucket, String key, ExecutorService executor, long chunkSize) {
+	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final ExecutorService executor, final long chunkSize) {
 		this.s3Client = s3Client;
 		this.file = file;
 		this.bucket = bucket;
@@ -73,6 +73,7 @@ public class UploadMulti {
 		final PrgTracker tracker = new PrgTracker(LOG);
 		final long contentLength = this.file.length();
 		final List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
+		// FIXME specify MD5.
 		final InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
 		try {
 			long filePosition = 0;
@@ -104,7 +105,7 @@ public class UploadMulti {
 		}
 	}
 
-	private InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initRequest) throws Exception {
+	private InitiateMultipartUploadResult initiateMultipartUpload(final InitiateMultipartUploadRequest initRequest) throws Exception {
 		int attempt = 0;
 		while (true) {
 			attempt++;
@@ -119,7 +120,7 @@ public class UploadMulti {
 		}
 	}
 
-	private void completeMultipartUpload(CompleteMultipartUploadRequest compRequest) throws Exception {
+	private void completeMultipartUpload(final CompleteMultipartUploadRequest compRequest) throws Exception {
 		int attempt = 0;
 		while (true) {
 			attempt++;
@@ -140,7 +141,7 @@ public class UploadMulti {
 		private final AmazonS3 s3Client;
 		private final UploadPartRequest uploadRequest;
 
-		public PartUploader(AmazonS3 s3Client, UploadPartRequest uploadRequest) {
+		public PartUploader(final AmazonS3 s3Client, final UploadPartRequest uploadRequest) {
 			this.s3Client = s3Client;
 			this.uploadRequest = uploadRequest;
 		}
