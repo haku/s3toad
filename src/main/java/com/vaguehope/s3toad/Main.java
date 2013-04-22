@@ -9,7 +9,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Request;
+import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.vaguehope.s3toad.tasks.Clean;
@@ -25,18 +28,33 @@ import com.vaguehope.s3toad.util.LogHelper;
 
 public class Main {
 
+	private static final String S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
+
 	private final AmazonS3 s3Client;
 
-	public Main () throws MalformedURLException {
+	static class VoodooAmazonS3Client extends AmazonS3Client {
+
+		@Override
+		public <X extends AmazonWebServiceRequest> Request<X> createRequest (final String bucketName, final String key, final X originalRequest, final HttpMethodName httpMethod) {
+			final Request<X> res = super.createRequest(bucketName, key, originalRequest, httpMethod);
+			System.err.println("requestEndpoint=" + res.getEndpoint());
+			return res;
+		}
+
+	}
+
+	public Main() throws MalformedURLException {
 		LogHelper.bridgeJul();
 		ClientConfiguration clientConfiguration = new ClientConfiguration();
 		findProxy(clientConfiguration);
-		AmazonS3Client s3c = new AmazonS3Client();
+		AmazonS3Client s3c = new VoodooAmazonS3Client();
 		s3c.setConfiguration(clientConfiguration);
+		s3c.setEndpoint(S3_ENDPOINT);
+		System.err.println("defaultEndpoint=" + S3_ENDPOINT);
 		this.s3Client = s3c;
 	}
 
-	public void run (final String[] rawArgs)  {
+	public void run (final String[] rawArgs) {
 		//final PrintStream out = System.out;
 		final PrintStream err = System.err;
 		final Args args = new Args();
@@ -66,8 +84,8 @@ public class Main {
 					doClean(args);
 					break;
 				case EMPTY:
-				    doEmpty(args);
-				    break;
+					doEmpty(args);
+					break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -101,7 +119,7 @@ public class Main {
 		ps.println();
 	}
 
-	private void doList (final Args args) throws CmdLineException  {
+	private void doList (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, false);
 		args.maxArgs(1);
 		if (bucket != null) {
@@ -113,7 +131,7 @@ public class Main {
 		}
 	}
 
-	private void doPush (final Args args) throws Exception  {
+	private void doPush (final Args args) throws Exception {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
@@ -143,7 +161,7 @@ public class Main {
 		}
 	}
 
-	private void doWatch (final Args args) throws Exception  {
+	private void doWatch (final Args args) throws Exception {
 		final String dirpath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		args.maxArgs(2);
@@ -174,7 +192,7 @@ public class Main {
 		}
 	}
 
-	private void doPull (final Args args) throws CmdLineException, AmazonClientException, InterruptedException  {
+	private void doPull (final Args args) throws CmdLineException, AmazonClientException, InterruptedException {
 		final String bucket = args.getArg(0, true);
 		final String key = args.getArg(1, true);
 		args.maxArgs(2);
@@ -213,10 +231,10 @@ public class Main {
 	}
 
 	private void doEmpty (final Args args) throws CmdLineException {
-	    String bucket = args.getArg(0, true);
-	    args.maxArgs(1);
-	    System.err.println("bucket=" + bucket);
-	    new EmptyBucket(this.s3Client, bucket).run();
+		String bucket = args.getArg(0, true);
+		args.maxArgs(1);
+		System.err.println("bucket=" + bucket);
+		new EmptyBucket(this.s3Client, bucket).run();
 	}
 
 	private static void findProxy (final ClientConfiguration clientConfiguration) throws MalformedURLException {
@@ -239,7 +257,7 @@ public class Main {
 
 //	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	public static void main (final String[] args) throws MalformedURLException  {
+	public static void main (final String[] args) throws MalformedURLException {
 		new Main().run(args);
 	}
 
