@@ -94,16 +94,20 @@ public class Main {
 		catch (CmdLineException e) {
 			err.println(e.getMessage());
 			shortHelp(parser, err);
+			System.exit(1);
 			return;
 		}
 		catch (AmazonClientException e) {
-			err.println("An AWS exception occured: " + e.getMessage());
+			err.println("An AWS exception occured: " + e.toString());
+			e.printStackTrace(err);
+			System.exit(2);
 		}
 		catch (Exception e) {
 			err.println("An unhandled error occured.");
 			e.printStackTrace(err);
+			System.exit(3);
 		}
-		err.println("done.");
+		err.println("success.");
 	}
 
 	private static void shortHelp (final CmdLineParser parser, final PrintStream ps) {
