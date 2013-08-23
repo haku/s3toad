@@ -15,6 +15,14 @@ import com.amazonaws.Request;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
+import com.amazonaws.services.s3.model.CopyPartRequest;
+import com.amazonaws.services.s3.model.CopyPartResult;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PartETag;
 import com.vaguehope.s3toad.tasks.Clean;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
 import com.vaguehope.s3toad.tasks.EmptyBucket;
@@ -25,6 +33,14 @@ import com.vaguehope.s3toad.tasks.Status;
 import com.vaguehope.s3toad.tasks.UploadMulti;
 import com.vaguehope.s3toad.tasks.WatchUpload;
 import com.vaguehope.s3toad.util.LogHelper;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Main {
 
@@ -86,6 +102,9 @@ public class Main {
 				case EMPTY:
 					doEmpty(args);
 					break;
+                case COPY:
+                    doLargeCopy(args);
+                    break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -122,6 +141,91 @@ public class Main {
 		parser.printUsage(ps);
 		ps.println();
 	}
+
+    private void doLargeCopy (final Args args) throws CmdLineException, InterruptedException, ExecutionException {
+        final String sourceBucket = args.getArg(0, true);
+        final String sourceKey = args.getArg(1, true);
+        final String destinationBucket = args.getArg(2, true);
+        final String destinationKey = args.getArg(3, true);
+        args.maxArgs(4);
+
+
+        // find the file length
+        ObjectMetadata metadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
+
+
+        InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
+        final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
+
+
+
+        // for each 5gb, create a new partRequest
+        long start = 0;
+        long max = 100L*1024L*1024L;
+        System.out.println("Content Length: " + metadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(metadata.getContentLength()/max)));
+
+        System.out.println("start: " + new Date().toString());
+
+
+        ExecutorService ex = Executors.newFixedThreadPool(40);
+        List<Future<CopyPartResult>> futures = new ArrayList<Future<CopyPartResult>>();
+
+        // TODO make these requests parallel; this should reduce the time taken to the time it takes to process one part.
+        int partNumber = 1;
+        while (start < metadata.getContentLength()) {
+            long change = Math.min(max, metadata.getContentLength() - start);
+            long end = start + change-1;
+            //if (change == max) end -= 1; // "first byte of the part; last byte of the part" hence the -1.
+
+            final long actualStart = start;
+            final long actualEnd = end;
+            final int actualPartNumber = partNumber;
+
+
+            System.out.println("Setting up part " + partNumber + " [" + start + ", " + end + "]");
+            Callable<CopyPartResult> callable = new Callable<CopyPartResult>() {
+
+                @Override
+                public CopyPartResult call() throws Exception {
+                    CopyPartRequest partRequest = new CopyPartRequest()
+                            .withUploadId(startResult.getUploadId())
+                            .withFirstByte(actualStart)
+                            .withLastByte(actualEnd)
+                            .withSourceBucketName(sourceBucket)
+                            .withSourceKey(sourceKey)
+                            .withDestinationBucketName(destinationBucket)
+                            .withDestinationKey(destinationKey)
+                            .withPartNumber(actualPartNumber)
+                            ;
+                   return s3Client.copyPart(partRequest);
+                }
+            };
+            Future<CopyPartResult> future = ex.submit(callable);
+            futures.add(future);
+
+            start += change;
+            partNumber++;
+        }
+
+        List<PartETag> etags = new ArrayList<PartETag>();
+        for (Future<CopyPartResult> future : futures) {
+            CopyPartResult partResult = future.get();
+            System.out.println("Processing part " + partResult.getPartNumber());
+            etags.add(new PartETag(partResult.getPartNumber(), partResult.getETag()));
+        }
+
+        CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest((String)null, (String)null, (String)null, (List<PartETag>)null)
+                .withUploadId(startResult.getUploadId())
+                .withBucketName(destinationBucket)
+                .withKey(destinationKey)
+                .withPartETags(etags)
+                ;
+
+        CompleteMultipartUploadResult completeResult = s3Client.completeMultipartUpload(completeRequest);
+        System.out.println("end: " + new Date().toString());
+
+        ex.shutdown();
+    }
 
 	private void doList (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, false);
