@@ -65,6 +65,7 @@ public class Args {
 		URL,
 		STATUS,
 		CLEAN,
+        COPY,
 		EMPTY;
 		private static final String USAGE = "" +
 				"help\n" +
@@ -75,6 +76,7 @@ public class Args {
 				"url [bucket] [key]\n" +
 				"status [bucket]\n" +
 				"clean [bucket]\n" +
+				"copy [sourceBucket] [sourceKey] [destinationBucket] [destinationKey]\n" +
 				"empty [bucket]";
 	}
 
