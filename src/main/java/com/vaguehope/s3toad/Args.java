@@ -65,7 +65,7 @@ public class Args {
 		URL,
 		STATUS,
 		CLEAN,
-        COPY,
+		COPY,
 		EMPTY;
 		private static final String USAGE = "" +
 				"help\n" +
