@@ -150,14 +150,11 @@ public class Main {
         args.maxArgs(4);
 
 
-        // find the file length
         ObjectMetadata metadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
-
 
         InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
         final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
 
-        // for each 5gb, create a new partRequest
         long start = 0;
         long max = 100L*1024L*1024L;
         System.out.println("Content Length: " + metadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(metadata.getContentLength()/max)));
@@ -171,7 +168,6 @@ public class Main {
         while (start < metadata.getContentLength()) {
             long change = Math.min(max, metadata.getContentLength() - start);
             long end = start + change-1;
-            //if (change == max) end -= 1; // "first byte of the part; last byte of the part" hence the -1.
 
             final long actualStart = start;
             final long actualEnd = end;
