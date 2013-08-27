@@ -102,9 +102,9 @@ public class Main {
 				case EMPTY:
 					doEmpty(args);
 					break;
-                case COPY:
-                    doLargeCopy(args);
-                    break;
+				case COPY:
+					doLargeCopy(args);
+					break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -142,79 +142,79 @@ public class Main {
 		ps.println();
 	}
 
-    private void doLargeCopy (final Args args) throws CmdLineException, InterruptedException, ExecutionException {
-        final String sourceBucket = args.getArg(0, true);
-        final String sourceKey = args.getArg(1, true);
-        final String destinationBucket = args.getArg(2, true);
-        final String destinationKey = args.getArg(3, true);
-        args.maxArgs(4);
+	private void doLargeCopy (final Args args) throws CmdLineException, InterruptedException, ExecutionException {
+		final String sourceBucket = args.getArg(0, true);
+		final String sourceKey = args.getArg(1, true);
+		final String destinationBucket = args.getArg(2, true);
+		final String destinationKey = args.getArg(3, true);
+		args.maxArgs(4);
 
 
-        ObjectMetadata metadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
+		ObjectMetadata metadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
 
-        InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
-        final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
+		InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
+		final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
 
-        long start = 0;
-        long max = 100L*1024L*1024L;
-        System.out.println("Content Length: " + metadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(metadata.getContentLength()/max)));
+		long start = 0;
+		long max = 100L*1024L*1024L;
+		System.out.println("Content Length: " + metadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(metadata.getContentLength()/max)));
 
-        System.out.println("start: " + new Date().toString());
+		System.out.println("start: " + new Date().toString());
 
-        ExecutorService ex = Executors.newFixedThreadPool(50);
-        List<Future<CopyPartResult>> futures = new ArrayList<Future<CopyPartResult>>();
+		ExecutorService ex = Executors.newFixedThreadPool(50);
+		List<Future<CopyPartResult>> futures = new ArrayList<Future<CopyPartResult>>();
 
-        int partNumber = 1;
-        while (start < metadata.getContentLength()) {
-            long change = Math.min(max, metadata.getContentLength() - start);
-            long end = start + change-1;
+		int partNumber = 1;
+		while (start < metadata.getContentLength()) {
+			long change = Math.min(max, metadata.getContentLength() - start);
+			long end = start + change-1;
 
-            final long actualStart = start;
-            final long actualEnd = end;
-            final int actualPartNumber = partNumber;
+			final long actualStart = start;
+			final long actualEnd = end;
+			final int actualPartNumber = partNumber;
 
-            System.out.println("Setting up part " + partNumber + " [" + start + ", " + end + "]");
-            Callable<CopyPartResult> callable = new Callable<CopyPartResult>() {
-                @Override public CopyPartResult call() throws Exception {
-                    CopyPartRequest partRequest = new CopyPartRequest()
-                            .withUploadId(startResult.getUploadId())
-                            .withFirstByte(actualStart)
-                            .withLastByte(actualEnd)
-                            .withSourceBucketName(sourceBucket)
-                            .withSourceKey(sourceKey)
-                            .withDestinationBucketName(destinationBucket)
-                            .withDestinationKey(destinationKey)
-                            .withPartNumber(actualPartNumber)
-                            ;
-                   return s3Client.copyPart(partRequest);
-                }
-            };
-            Future<CopyPartResult> future = ex.submit(callable);
-            futures.add(future);
+			System.out.println("Setting up part " + partNumber + " [" + start + ", " + end + "]");
+			Callable<CopyPartResult> callable = new Callable<CopyPartResult>() {
+				@Override public CopyPartResult call() throws Exception {
+					CopyPartRequest partRequest = new CopyPartRequest()
+							.withUploadId(startResult.getUploadId())
+							.withFirstByte(actualStart)
+							.withLastByte(actualEnd)
+							.withSourceBucketName(sourceBucket)
+							.withSourceKey(sourceKey)
+							.withDestinationBucketName(destinationBucket)
+							.withDestinationKey(destinationKey)
+							.withPartNumber(actualPartNumber)
+							;
+				   return s3Client.copyPart(partRequest);
+				}
+			};
+			Future<CopyPartResult> future = ex.submit(callable);
+			futures.add(future);
 
-            start += change;
-            partNumber++;
-        }
+			start += change;
+			partNumber++;
+		}
 
-        List<PartETag> etags = new ArrayList<PartETag>();
-        for (Future<CopyPartResult> future : futures) {
-            CopyPartResult partResult = future.get();
-            System.out.println("Processing part " + partResult.getPartNumber());
-            etags.add(new PartETag(partResult.getPartNumber(), partResult.getETag()));
-        }
+		List<PartETag> etags = new ArrayList<PartETag>();
+		for (Future<CopyPartResult> future : futures) {
+			CopyPartResult partResult = future.get();
+			System.out.println("Processing part " + partResult.getPartNumber());
+			etags.add(new PartETag(partResult.getPartNumber(), partResult.getETag()));
+		}
 
-        CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest((String)null, (String)null, (String)null, (List<PartETag>)null)
-                .withUploadId(startResult.getUploadId())
-                .withBucketName(destinationBucket)
-                .withKey(destinationKey)
-                .withPartETags(etags)
-                ;
+		CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest((String)null, (String)null, (String)null, (List<PartETag>)null)
+				.withUploadId(startResult.getUploadId())
+				.withBucketName(destinationBucket)
+				.withKey(destinationKey)
+				.withPartETags(etags)
+				;
 
-        CompleteMultipartUploadResult completeResult = s3Client.completeMultipartUpload(completeRequest);
-        System.out.println("end: " + new Date().toString());
+		CompleteMultipartUploadResult completeResult = s3Client.completeMultipartUpload(completeRequest);
+		System.out.println("end: " + new Date().toString());
 
-        ex.shutdown();
-    }
+		ex.shutdown();
+	}
 
 	private void doList (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, false);
