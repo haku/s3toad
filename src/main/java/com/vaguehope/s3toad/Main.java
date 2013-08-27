@@ -157,8 +157,6 @@ public class Main {
         InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
         final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
 
-
-
         // for each 5gb, create a new partRequest
         long start = 0;
         long max = 100L*1024L*1024L;
@@ -166,11 +164,9 @@ public class Main {
 
         System.out.println("start: " + new Date().toString());
 
-
-        ExecutorService ex = Executors.newFixedThreadPool(40);
+        ExecutorService ex = Executors.newFixedThreadPool(50);
         List<Future<CopyPartResult>> futures = new ArrayList<Future<CopyPartResult>>();
 
-        // TODO make these requests parallel; this should reduce the time taken to the time it takes to process one part.
         int partNumber = 1;
         while (start < metadata.getContentLength()) {
             long change = Math.min(max, metadata.getContentLength() - start);
@@ -181,12 +177,9 @@ public class Main {
             final long actualEnd = end;
             final int actualPartNumber = partNumber;
 
-
             System.out.println("Setting up part " + partNumber + " [" + start + ", " + end + "]");
             Callable<CopyPartResult> callable = new Callable<CopyPartResult>() {
-
-                @Override
-                public CopyPartResult call() throws Exception {
+                @Override public CopyPartResult call() throws Exception {
                     CopyPartRequest partRequest = new CopyPartRequest()
                             .withUploadId(startResult.getUploadId())
                             .withFirstByte(actualStart)
