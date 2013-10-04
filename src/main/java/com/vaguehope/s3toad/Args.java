@@ -85,7 +85,9 @@ public class Args {
 		STATUS,
 		CLEAN,
 		COPY,
-		EMPTY;
+		EMPTY,
+        METADATA,
+        ;
 		private static final String USAGE = "" +
 				"help\n" +
 				"list (bucket)\n" +
@@ -96,7 +98,9 @@ public class Args {
 				"status [bucket]\n" +
 				"clean [bucket]\n" +
 				"copy [sourceBucket] [sourceKey] [destinationBucket] [destinationKey]\n" +
-				"empty [bucket]";
+				"empty [bucket]" +
+                "metadata [bucket] [key]"
+                ;
 	}
 
 }
