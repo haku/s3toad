@@ -87,6 +87,7 @@ public class Args {
 		COPY,
 		EMPTY,
         METADATA,
+        ABORT_UPLOAD,
         ;
 		private static final String USAGE = "" +
 				"help\n" +
@@ -99,6 +100,7 @@ public class Args {
 				"clean [bucket]\n" +
 				"copy [sourceBucket] [sourceKey] [destinationBucket] [destinationKey]\n" +
 				"empty [bucket]" +
+                "abort_upload [bucket] [key] [id]" +
                 "metadata [bucket] [key]"
                 ;
 	}
