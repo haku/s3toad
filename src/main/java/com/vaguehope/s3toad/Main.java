@@ -94,12 +94,12 @@ public class Main {
 				case COPY:
 					doLargeCopy(args);
 					break;
-                case METADATA:
-                    doMetadata(args);
-                    break;
-                case ABORT_UPLOAD:
-                    doAbort(args);
-                    break;
+				case METADATA:
+					doMetadata(args);
+					break;
+				case ABORT_UPLOAD:
+					doAbort(args);
+					break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -142,10 +142,10 @@ public class Main {
 		final String sourceKey = args.getArg(1, true);
 		final String destinationBucket = args.getArg(2, true);
 		final String destinationKey = args.getArg(3, true);
-        final Map<String, String> metadata = args.getMetadata();
+		final Map<String, String> metadata = args.getMetadata();
 		args.minArgs(4);
 
-        new LargeCopy(s3Client, sourceBucket, sourceKey, destinationBucket, destinationKey, metadata).call();
+		new LargeCopy(s3Client, sourceBucket, sourceKey, destinationBucket, destinationKey, metadata).call();
 	}
 
 	private void doList (final Args args) throws CmdLineException {
@@ -165,7 +165,7 @@ public class Main {
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
 		args.minArgs(3);
-        Map<String, String> metadata = args.getMetadata();
+		Map<String, String> metadata = args.getMetadata();
 		final int threads = args.getThreadCount(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
@@ -191,14 +191,14 @@ public class Main {
 		}
 	}
 
-    private void doAbort(final Args args) throws CmdLineException {
-        final String bucket = args.getArg(0, true);
+	private void doAbort(final Args args) throws CmdLineException {
+		final String bucket = args.getArg(0, true);
 		final String key = args.getArg(1, true);
 		final String id = args.getArg(2, true);
 		args.maxArgs(3);
-        AbortMultipartUploadRequest request = new AbortMultipartUploadRequest(bucket, key, id);
-        s3Client.abortMultipartUpload(request);
-    }
+		AbortMultipartUploadRequest request = new AbortMultipartUploadRequest(bucket, key, id);
+		s3Client.abortMultipartUpload(request);
+	}
 
 	private void doWatch (final Args args) throws Exception {
 		final String dirpath = args.getArg(0, true);
@@ -255,17 +255,17 @@ public class Main {
 		new PreSignUrl(this.s3Client, bucket, key, hours).run();
 	}
 
-    private void doMetadata(final Args args) throws CmdLineException {
+	private void doMetadata(final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, true);
 		String key = args.getArg(1, true);
 		args.maxArgs(2);
 
-        ObjectMetadata metadata = s3Client.getObjectMetadata(bucket, key);
-        for (Map.Entry<String, String> entry : metadata.getUserMetadata().entrySet()) {
-            System.out.println(entry.getKey() + "=" + entry.getValue());
-        }
+		ObjectMetadata metadata = s3Client.getObjectMetadata(bucket, key);
+		for (Map.Entry<String, String> entry : metadata.getUserMetadata().entrySet()) {
+			System.out.println(entry.getKey() + "=" + entry.getValue());
+		}
 
-    }
+	}
 
 	private void doStatus (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, true);

@@ -18,7 +18,7 @@ public class Args {
 	@Option(name = "--controls", aliases = "-c", metaVar = "<count>", usage = "control thread count") private int controlCount;
 	@Option(name = "--expiry", aliases = "-e", metaVar = "<hours>", usage = "expiry (hours)") private int hours;
 	@Option(name = "--delete", usage = "delete files after upload") private boolean delete;
-    @Option(name = "--metadata", aliases = "-m", metaVar = "<metadata>", usage = "key=value metadata to add to files when uploading/copying, can be specified multiple times", multiValued = true) private List<String> metadata;
+	@Option(name = "--metadata", aliases = "-m", metaVar = "<metadata>", usage = "key=value metadata to add to files when uploading/copying, can be specified multiple times", multiValued = true) private List<String> metadata;
 
 	public Action getAction () {
 		return this.action;
@@ -59,17 +59,17 @@ public class Args {
 		return this.hours < 1 ? defVal : this.hours;
 	}
 
-    public Map<String, String> getMetadata() throws CmdLineException {
-        Map<String, String> result = new LinkedHashMap<String, String>();
+	public Map<String, String> getMetadata() throws CmdLineException {
+		Map<String, String> result = new LinkedHashMap<String, String>();
 
-        for (String s : metadata) {
-            String[] parts = s.split("=", 2);
-            if (parts.length != 2) throw new CmdLineException(null, "Faied to parse metadata as a key=value pair: " + s);
-            result.put(parts[0], parts[1]);
-        }
+		for (String s : metadata) {
+			String[] parts = s.split("=", 2);
+			if (parts.length != 2) throw new CmdLineException(null, "Faied to parse metadata as a key=value pair: " + s);
+			result.put(parts[0], parts[1]);
+		}
 
-        return result;
-    }
+		return result;
+	}
 
 	public boolean getDelete () {
 		return this.delete;
@@ -86,9 +86,9 @@ public class Args {
 		CLEAN,
 		COPY,
 		EMPTY,
-        METADATA,
-        ABORT_UPLOAD,
-        ;
+		METADATA,
+		ABORT_UPLOAD,
+		;
 		private static final String USAGE = "" +
 				"help\n" +
 				"list (bucket)\n" +
@@ -100,9 +100,9 @@ public class Args {
 				"clean [bucket]\n" +
 				"copy [sourceBucket] [sourceKey] [destinationBucket] [destinationKey]\n" +
 				"empty [bucket]" +
-                "abort_upload [bucket] [key] [id]" +
-                "metadata [bucket] [key]"
-                ;
+				"abort_upload [bucket] [key] [id]" +
+				"metadata [bucket] [key]"
+				;
 	}
 
 }
