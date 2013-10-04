@@ -11,7 +11,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -25,25 +27,31 @@ public class LargeCopy implements Callable<Void> {
 	private final String sourceKey;
 	private final String destinationBucket;
 	private final String destinationKey;
+    private final Map<String, String> metadata;
 
-    public LargeCopy(AmazonS3 s3Client, String sourceBucket, String sourceKey, String destinationBucket, String destinationKey) {
+    public LargeCopy(AmazonS3 s3Client, String sourceBucket, String sourceKey, String destinationBucket, String destinationKey, Map<String, String> metadata) {
         this.s3Client = s3Client;
         this.sourceBucket = sourceBucket;
         this.sourceKey = sourceKey;
         this.destinationBucket = destinationBucket;
         this.destinationKey = destinationKey;
+        this.metadata = metadata;
     }
 
     @Override
     public Void call() throws InterruptedException, ExecutionException {
-		ObjectMetadata metadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
+		ObjectMetadata objectMetadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
 
-		InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey);
+        final Map<String, String> mergedUserMetadata = new LinkedHashMap<String, String>();
+        mergedUserMetadata.putAll(objectMetadata.getUserMetadata());
+        mergedUserMetadata.putAll(metadata);
+        objectMetadata.setUserMetadata(mergedUserMetadata);
+		InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey, objectMetadata);
 		final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
 
 		long start = 0;
 		long max = 100L*1024L*1024L;
-		System.out.println("Content Length: " + metadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(metadata.getContentLength()/max)));
+		System.out.println("Content Length: " + objectMetadata.getContentLength() + " [max part length: " + max + "] -> estimated parts: " + (1+(objectMetadata.getContentLength()/max)));
 
 		System.out.println("start: " + new Date().toString());
 
@@ -51,8 +59,8 @@ public class LargeCopy implements Callable<Void> {
 		List<Future<CopyPartResult>> futures = new ArrayList<Future<CopyPartResult>>();
 
 		int partNumber = 1;
-		while (start < metadata.getContentLength()) {
-			long change = Math.min(max, metadata.getContentLength() - start);
+		while (start < objectMetadata.getContentLength()) {
+			long change = Math.min(max, objectMetadata.getContentLength() - start);
 			long end = start + change-1;
 
 			final long actualStart = start;
