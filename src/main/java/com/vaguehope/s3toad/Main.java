@@ -15,6 +15,7 @@ import com.amazonaws.Request;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.vaguehope.s3toad.tasks.Clean;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
 import com.vaguehope.s3toad.tasks.EmptyBucket;
@@ -92,6 +93,9 @@ public class Main {
 				case COPY:
 					doLargeCopy(args);
 					break;
+                case METADATA:
+                    doMetadata(args);
+                    break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -237,6 +241,18 @@ public class Main {
 
 		new PreSignUrl(this.s3Client, bucket, key, hours).run();
 	}
+
+    private void doMetadata(final Args args) throws CmdLineException {
+		String bucket = args.getArg(0, true);
+		String key = args.getArg(1, true);
+		args.maxArgs(2);
+
+        ObjectMetadata metadata = s3Client.getObjectMetadata(bucket, key);
+        for (Map.Entry<String, String> entry : metadata.getUserMetadata().entrySet()) {
+            System.out.println(entry.getKey() + "=" + entry.getValue());
+        }
+
+    }
 
 	private void doStatus (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, true);
