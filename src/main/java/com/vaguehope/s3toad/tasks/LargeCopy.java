@@ -23,29 +23,29 @@ import java.util.concurrent.Future;
 public class LargeCopy implements Callable<Void> {
 	private final AmazonS3 s3Client;
 
-    private final String sourceBucket;
+	private final String sourceBucket;
 	private final String sourceKey;
 	private final String destinationBucket;
 	private final String destinationKey;
-    private final Map<String, String> metadata;
+	private final Map<String, String> metadata;
 
-    public LargeCopy(AmazonS3 s3Client, String sourceBucket, String sourceKey, String destinationBucket, String destinationKey, Map<String, String> metadata) {
-        this.s3Client = s3Client;
-        this.sourceBucket = sourceBucket;
-        this.sourceKey = sourceKey;
-        this.destinationBucket = destinationBucket;
-        this.destinationKey = destinationKey;
-        this.metadata = metadata;
-    }
+	public LargeCopy(AmazonS3 s3Client, String sourceBucket, String sourceKey, String destinationBucket, String destinationKey, Map<String, String> metadata) {
+		this.s3Client = s3Client;
+		this.sourceBucket = sourceBucket;
+		this.sourceKey = sourceKey;
+		this.destinationBucket = destinationBucket;
+		this.destinationKey = destinationKey;
+		this.metadata = metadata;
+	}
 
-    @Override
-    public Void call() throws InterruptedException, ExecutionException {
+	@Override
+	public Void call() throws InterruptedException, ExecutionException {
 		ObjectMetadata objectMetadata = s3Client.getObjectMetadata(sourceBucket, sourceKey);
 
-        final Map<String, String> mergedUserMetadata = new LinkedHashMap<String, String>();
-        mergedUserMetadata.putAll(objectMetadata.getUserMetadata());
-        mergedUserMetadata.putAll(metadata);
-        objectMetadata.setUserMetadata(mergedUserMetadata);
+		final Map<String, String> mergedUserMetadata = new LinkedHashMap<String, String>();
+		mergedUserMetadata.putAll(objectMetadata.getUserMetadata());
+		mergedUserMetadata.putAll(metadata);
+		objectMetadata.setUserMetadata(mergedUserMetadata);
 		InitiateMultipartUploadRequest startRequest = new InitiateMultipartUploadRequest(destinationBucket, destinationKey, objectMetadata);
 		final InitiateMultipartUploadResult startResult = s3Client.initiateMultipartUpload(startRequest);
 
@@ -109,7 +109,7 @@ public class LargeCopy implements Callable<Void> {
 
 		ex.shutdown();
 
-        return null;
-    }
+		return null;
+	}
 
 }
