@@ -15,6 +15,7 @@ import com.amazonaws.Request;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.vaguehope.s3toad.tasks.Clean;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
@@ -95,6 +96,9 @@ public class Main {
 					break;
                 case METADATA:
                     doMetadata(args);
+                    break;
+                case ABORT_UPLOAD:
+                    doAbort(args);
                     break;
 				case HELP:
 				default:
@@ -186,6 +190,15 @@ public class Main {
 			u.dispose();
 		}
 	}
+
+    private void doAbort(final Args args) throws CmdLineException {
+        final String bucket = args.getArg(0, true);
+		final String key = args.getArg(1, true);
+		final String id = args.getArg(2, true);
+		args.maxArgs(3);
+        AbortMultipartUploadRequest request = new AbortMultipartUploadRequest(bucket, key, id);
+        s3Client.abortMultipartUpload(request);
+    }
 
 	private void doWatch (final Args args) throws Exception {
 		final String dirpath = args.getArg(0, true);
