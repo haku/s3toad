@@ -26,6 +26,7 @@ import com.vaguehope.s3toad.tasks.Status;
 import com.vaguehope.s3toad.tasks.UploadMulti;
 import com.vaguehope.s3toad.tasks.WatchUpload;
 import com.vaguehope.s3toad.util.LogHelper;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class Main {
@@ -133,9 +134,10 @@ public class Main {
 		final String sourceKey = args.getArg(1, true);
 		final String destinationBucket = args.getArg(2, true);
 		final String destinationKey = args.getArg(3, true);
-		args.maxArgs(4);
+        final Map<String, String> metadata = args.getMetadata();
+		args.minArgs(4);
 
-        new LargeCopy(s3Client, sourceBucket, sourceKey, destinationBucket, destinationKey).call();
+        new LargeCopy(s3Client, sourceBucket, sourceKey, destinationBucket, destinationKey, metadata).call();
 	}
 
 	private void doList (final Args args) throws CmdLineException {
@@ -154,7 +156,8 @@ public class Main {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
-		args.maxArgs(3);
+		args.minArgs(3);
+        Map<String, String> metadata = args.getMetadata();
 		final int threads = args.getThreadCount(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
@@ -171,7 +174,7 @@ public class Main {
 		System.err.println("threads=" + threads);
 		System.err.println("chunkSize=" + chunkSize);
 
-		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize);
+		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize, metadata);
 		try {
 			u.run();
 		}
