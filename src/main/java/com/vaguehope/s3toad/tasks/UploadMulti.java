@@ -2,7 +2,9 @@ package com.vaguehope.s3toad.tasks;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +19,7 @@ import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -37,6 +40,17 @@ public class UploadMulti {
 	private final String key;
 	private final ExecutorService executor;
 	private final long chunkSize;
+	private final Map<String, String> metadata;
+
+	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final int threads, final long chunkSize, final Map<String, String> metadata) {
+		this.s3Client = s3Client;
+		this.file = file;
+		this.bucket = bucket;
+		this.key = key;
+		this.executor = Executors.newFixedThreadPool(threads);
+		this.chunkSize = chunkSize;
+		this.metadata = metadata;
+	}
 
 	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final int threads, final long chunkSize) {
 		this.s3Client = s3Client;
@@ -45,6 +59,17 @@ public class UploadMulti {
 		this.key = key;
 		this.executor = Executors.newFixedThreadPool(threads);
 		this.chunkSize = chunkSize;
+		this.metadata = new HashMap<String, String>();
+	}
+
+	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final ExecutorService executor, final long chunkSize, final Map<String, String> metadata) {
+		this.s3Client = s3Client;
+		this.file = file;
+		this.bucket = bucket;
+		this.key = key;
+		this.executor = executor;
+		this.chunkSize = chunkSize;
+		this.metadata = metadata;
 	}
 
 	public UploadMulti(final AmazonS3 s3Client, final File file, final String bucket, final String key, final ExecutorService executor, final long chunkSize) {
@@ -54,6 +79,7 @@ public class UploadMulti {
 		this.key = key;
 		this.executor = executor;
 		this.chunkSize = chunkSize;
+		this.metadata = new HashMap<String, String>();
 	}
 
 	public void dispose() {
@@ -74,7 +100,9 @@ public class UploadMulti {
 		final long contentLength = this.file.length();
 		final List<Future<UploadPartResult>> uploadFutures = new ArrayList<Future<UploadPartResult>>();
 		// FIXME specify MD5.
-		final InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key));
+		final ObjectMetadata objMetadata = new ObjectMetadata();
+		objMetadata.setUserMetadata(this.metadata);
+		final InitiateMultipartUploadResult initResponse = initiateMultipartUpload(new InitiateMultipartUploadRequest(this.bucket, this.key, objMetadata));
 		try {
 			long filePosition = 0;
 			for (int i = 1; filePosition < contentLength; i++) {

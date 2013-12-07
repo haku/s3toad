@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -15,9 +17,12 @@ import com.amazonaws.Request;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.vaguehope.s3toad.tasks.Clean;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
 import com.vaguehope.s3toad.tasks.EmptyBucket;
+import com.vaguehope.s3toad.tasks.LargeCopy;
 import com.vaguehope.s3toad.tasks.ListBucket;
 import com.vaguehope.s3toad.tasks.ListBuckets;
 import com.vaguehope.s3toad.tasks.PreSignUrl;
@@ -86,6 +91,15 @@ public class Main {
 				case EMPTY:
 					doEmpty(args);
 					break;
+				case COPY:
+					doLargeCopy(args);
+					break;
+				case METADATA:
+					doMetadata(args);
+					break;
+				case ABORT_UPLOAD:
+					doAbort(args);
+					break;
 				case HELP:
 				default:
 					fullHelp(parser, err);
@@ -123,6 +137,17 @@ public class Main {
 		ps.println();
 	}
 
+	private void doLargeCopy (final Args args) throws CmdLineException, InterruptedException, ExecutionException {
+		final String sourceBucket = args.getArg(0, true);
+		final String sourceKey = args.getArg(1, true);
+		final String destinationBucket = args.getArg(2, true);
+		final String destinationKey = args.getArg(3, true);
+		final Map<String, String> metadata = args.getMetadata();
+		args.minArgs(4);
+
+		new LargeCopy(this.s3Client, sourceBucket, sourceKey, destinationBucket, destinationKey, metadata).call();
+	}
+
 	private void doList (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, false);
 		args.maxArgs(1);
@@ -139,7 +164,8 @@ public class Main {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
-		args.maxArgs(3);
+		args.minArgs(3);
+		final Map<String, String> metadata = args.getMetadata();
 		final int threads = args.getThreadCount(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
 
@@ -156,13 +182,22 @@ public class Main {
 		System.err.println("threads=" + threads);
 		System.err.println("chunkSize=" + chunkSize);
 
-		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize);
+		UploadMulti u = new UploadMulti(this.s3Client, file, bucket, key, threads, chunkSize, metadata);
 		try {
 			u.run();
 		}
 		finally {
 			u.dispose();
 		}
+	}
+
+	private void doAbort(final Args args) throws CmdLineException {
+		final String bucket = args.getArg(0, true);
+		final String key = args.getArg(1, true);
+		final String id = args.getArg(2, true);
+		args.maxArgs(3);
+		AbortMultipartUploadRequest request = new AbortMultipartUploadRequest(bucket, key, id);
+		this.s3Client.abortMultipartUpload(request);
 	}
 
 	private void doWatch (final Args args) throws Exception {
@@ -218,6 +253,17 @@ public class Main {
 		System.err.println("hours=" + hours);
 
 		new PreSignUrl(this.s3Client, bucket, key, hours).run();
+	}
+
+	private void doMetadata(final Args args) throws CmdLineException {
+		String bucket = args.getArg(0, true);
+		String key = args.getArg(1, true);
+		args.maxArgs(2);
+
+		ObjectMetadata metadata = this.s3Client.getObjectMetadata(bucket, key);
+		for (Map.Entry<String, String> entry : metadata.getUserMetadata().entrySet()) {
+			System.err.println(entry.getKey() + "=" + entry.getValue());
+		}
 	}
 
 	private void doStatus (final Args args) throws CmdLineException {
