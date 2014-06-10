@@ -12,10 +12,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Request;
-import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
@@ -39,22 +36,11 @@ public class Main {
 
 	private final AmazonS3 s3Client;
 
-	static class VoodooAmazonS3Client extends AmazonS3Client {
-
-		@Override
-		public <X extends AmazonWebServiceRequest> Request<X> createRequest (final String bucketName, final String key, final X originalRequest, final HttpMethodName httpMethod) {
-			final Request<X> res = super.createRequest(bucketName, key, originalRequest, httpMethod);
-			System.err.println("requestEndpoint=" + res.getEndpoint());
-			return res;
-		}
-
-	}
-
 	public Main() throws MalformedURLException {
 		LogHelper.bridgeJul();
 		ClientConfiguration clientConfiguration = new ClientConfiguration();
 		findProxy(clientConfiguration);
-		AmazonS3Client s3c = new VoodooAmazonS3Client();
+		AmazonS3Client s3c = new AmazonS3Client();
 		s3c.setConfiguration(clientConfiguration);
 		s3c.setEndpoint(S3_ENDPOINT);
 		System.err.println("defaultEndpoint=" + S3_ENDPOINT);
