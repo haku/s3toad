@@ -1,6 +1,7 @@
 package com.vaguehope.s3toad;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -20,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.vaguehope.s3toad.tasks.Clean;
+import com.vaguehope.s3toad.tasks.DownloadRecursive;
 import com.vaguehope.s3toad.tasks.DownloadSimple;
 import com.vaguehope.s3toad.tasks.EmptyBucket;
 import com.vaguehope.s3toad.tasks.LargeCopy;
@@ -78,6 +80,9 @@ public class Main {
 					break;
 				case PULL:
 					doPull(args);
+					break;
+				case RPULL:
+					doRpull(args);
 					break;
 				case URL:
 					doUrl(args);
@@ -231,7 +236,7 @@ public class Main {
 		}
 	}
 
-	private void doPull (final Args args) throws CmdLineException, AmazonClientException, InterruptedException {
+	private void doPull (final Args args) throws CmdLineException, InterruptedException {
 		final String bucket = args.getArg(0, true);
 		final String key = args.getArg(1, true);
 		args.maxArgs(2);
@@ -240,6 +245,17 @@ public class Main {
 		System.err.println("key=" + key);
 
 		new DownloadSimple(this.s3Client, bucket, key).run();
+	}
+
+	private void doRpull (final Args args) throws CmdLineException, InterruptedException, IOException {
+		final String bucket = args.getArg(0, true);
+		final String prefix = args.getArg(1, true);
+		args.maxArgs(2);
+
+		System.err.println("bucket=" + bucket);
+		System.err.println("prefix=" + prefix);
+
+		new DownloadRecursive(this.s3Client, bucket, prefix).run();
 	}
 
 	private void doUrl (final Args args) throws CmdLineException {
