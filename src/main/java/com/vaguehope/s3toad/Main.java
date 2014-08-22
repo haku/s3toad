@@ -155,7 +155,7 @@ public class Main {
 		final String filepath = args.getArg(0, true);
 		final String bucket = args.getArg(1, true);
 		String key = args.getArg(2, false);
-		args.minArgs(3);
+		args.minArgs(2);
 		final Map<String, String> metadata = args.getMetadata();
 		final int threads = args.getThreadCount(1);
 		final long chunkSize = args.getChunkSize(UploadMulti.DEFAULT_CHUNK_SIZE);
