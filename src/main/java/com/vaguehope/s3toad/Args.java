@@ -62,7 +62,7 @@ public class Args {
 	public Map<String, String> getMetadata() throws CmdLineException {
 		Map<String, String> result = new LinkedHashMap<String, String>();
 
-		for (String s : this.metadata) {
+		if (this.metadata != null) for (String s : this.metadata) {
 			String[] parts = s.split("=", 2);
 			if (parts.length != 2) throw new CmdLineException(null, "Faied to parse metadata as a key=value pair: " + s);
 			result.put(parts[0], parts[1]);
