@@ -30,6 +30,7 @@ public class DownloadRecursive {
 	}
 
 	public void run() throws InterruptedException, IOException {
+		LOG.info("counting...");
 		final List<S3ObjectSummary> objects = new ArrayList<S3ObjectSummary>();
 		ObjectListing objectListing = this.s3Client.listObjects(new ListObjectsRequest()
 				.withBucketName(this.bucket)
@@ -44,7 +45,7 @@ public class DownloadRecursive {
 		}
 		LOG.info("itemCount={}", objects.size());
 
-		final File baseDir = new File(basename(this.prefix));
+		final File baseDir = new File(basename(this.prefix)).getAbsoluteFile();
 		LOG.info("baseDir={}", baseDir.getAbsolutePath());
 
 		final TransferManager tm = new TransferManager(this.s3Client);
@@ -75,6 +76,7 @@ public class DownloadRecursive {
 
 	private static void mkdirParentDirs(final File file) throws IOException {
 		final File dir = file.getParentFile();
+		if (dir == null) throw new IOException("File has no parent: " + file);
 		if (dir.isDirectory()) return;
 		if (!dir.mkdirs()) throw new IOException("Failed mkdirs: " + dir.getAbsolutePath());
 	}
