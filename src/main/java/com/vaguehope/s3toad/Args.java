@@ -19,6 +19,8 @@ public class Args {
 	@Option(name = "--expiry", aliases = "-e", metaVar = "<hours>", usage = "expiry (hours)") private int hours;
 	@Option(name = "--delete", usage = "delete files after upload") private boolean delete;
 	@Option(name = "--metadata", aliases = "-m", metaVar = "<metadata>", usage = "key=value metadata to add to files when uploading/copying, can be specified multiple times", multiValued = true) private List<String> metadata;
+	@Option(name = "--reverse", usage = "download files in reverse order (rpull only)") private boolean reverse;
+	@Option(name = "--limit", usage = "max files to move (rpull only)") private int limit;
 
 	public Action getAction () {
 		return this.action;
@@ -73,6 +75,14 @@ public class Args {
 
 	public boolean getDelete () {
 		return this.delete;
+	}
+
+	public boolean isReverse () {
+		return this.reverse;
+	}
+
+	public long getLimit(final long defVal) {
+		return this.limit < 1 ? defVal : this.limit;
 	}
 
 	public static enum Action {

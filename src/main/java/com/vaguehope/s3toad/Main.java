@@ -237,11 +237,15 @@ public class Main {
 		final String bucket = args.getArg(0, true);
 		final String prefix = args.getArg(1, true);
 		args.maxArgs(2);
+		final boolean reverse = args.isReverse();
+		final long limit = args.getLimit(-1);
 
 		System.err.println("bucket=" + bucket);
 		System.err.println("prefix=" + prefix);
+		System.err.println("reverse=" + reverse);
+		System.err.println("limit=" + limit);
 
-		new DownloadRecursive(this.s3Client, bucket, prefix).run();
+		new DownloadRecursive(this.s3Client, bucket, prefix, reverse, limit).run();
 	}
 
 	private void doUrl (final Args args) throws CmdLineException {

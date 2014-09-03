@@ -3,6 +3,7 @@ package com.vaguehope.s3toad.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -22,11 +23,15 @@ public class DownloadRecursive {
 	private final AmazonS3 s3Client;
 	private final String bucket;
 	private final String prefix;
+	private final boolean reverse;
+	private final long limit;
 
-	public DownloadRecursive(final AmazonS3 s3Client, final String bucket, final String prefix) {
+	public DownloadRecursive(final AmazonS3 s3Client, final String bucket, final String prefix, final boolean reverse, final long limit) {
 		this.s3Client = s3Client;
 		this.bucket = bucket;
 		this.prefix = prefix;
+		this.reverse = reverse;
+		this.limit = limit;
 	}
 
 	public void run() throws InterruptedException, IOException {
@@ -45,20 +50,28 @@ public class DownloadRecursive {
 		}
 		LOG.info("itemCount={}", objects.size());
 
+		if (this.reverse) Collections.reverse(objects);
+
 		final File baseDir = new File(basename(this.prefix)).getAbsoluteFile();
 		LOG.info("baseDir={}", baseDir.getAbsolutePath());
 
 		final TransferManager tm = new TransferManager(this.s3Client);
 		try {
+			int transferedCount = 0;
 			for (final S3ObjectSummary o : objects) {
 				if (!o.getKey().startsWith(this.prefix)) throw new IllegalStateException("S3 listing returned key that did not start with requested prefix: " + o.getKey());
 				final String localPath = o.getKey().substring(this.prefix.length());
 				final File localFile = new File(baseDir, localPath);
 				if (!localFile.exists() || localFile.lastModified() != o.getLastModified().getTime()) {
-					LOG.info("{} --> {}", o.getKey(), localFile.getAbsolutePath());
+					LOG.info("{} {} --> {}", transferedCount, o.getKey(), localFile.getAbsolutePath());
 					mkdirParentDirs(localFile);
 					tm.download(new GetObjectRequest(o.getBucketName(), o.getKey()), localFile).waitForCompletion();
 					localFile.setLastModified(o.getLastModified().getTime());
+				}
+				transferedCount += 1;
+				if (this.limit > 0 && transferedCount >= this.limit) {
+					LOG.info("limit reached.  transferedCount={}", transferedCount);
+					break;
 				}
 			}
 		}
