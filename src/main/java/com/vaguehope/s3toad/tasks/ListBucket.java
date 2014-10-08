@@ -9,17 +9,19 @@ public class ListBucket {
 
 	private final AmazonS3 s3Client;
 	private final String bucket;
+	private final String prefix;
 
-	public ListBucket(final AmazonS3 s3Client, final String bucket) {
+	public ListBucket(final AmazonS3 s3Client, final String bucket, final String prefix) {
 		this.s3Client = s3Client;
 		this.bucket = bucket;
+		this.prefix = prefix;
 	}
 
 	public void run() {
 		long totalSize = 0;
 		long objectCount = 0;
 
-		ObjectListing objectListing = this.s3Client.listObjects(this.bucket);
+		ObjectListing objectListing = this.s3Client.listObjects(this.bucket, this.prefix);
 		// FIXME use nice ASCII table code from Lookfar.
 		while (true) {
 			for (S3ObjectSummary o : objectListing.getObjectSummaries()) {

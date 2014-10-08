@@ -141,10 +141,12 @@ public class Main {
 
 	private void doList (final Args args) throws CmdLineException {
 		String bucket = args.getArg(0, false);
-		args.maxArgs(1);
+		String prefix = args.getArg(1, false);
+		args.maxArgs(2);
 		if (bucket != null) {
 			System.err.println("bucket=" + bucket);
-			new ListBucket(this.s3Client, bucket).run();
+			System.err.println("prefix=" + prefix);
+			new ListBucket(this.s3Client, bucket, prefix).run();
 		}
 		else {
 			new ListBuckets(this.s3Client).run();
