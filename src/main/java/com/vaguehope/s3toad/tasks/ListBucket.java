@@ -32,6 +32,7 @@ public class ListBucket {
 			if (objectListing.getNextMarker() == null) break;
 			objectListing = this.s3Client.listObjects(new ListObjectsRequest()
 					.withBucketName(this.bucket)
+					.withPrefix(this.prefix)
 					.withMarker(objectListing.getNextMarker()));
 		}
 
