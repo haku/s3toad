@@ -10,9 +10,12 @@ import org.kohsuke.args4j.Option;
 
 public class Args {
 
+	private static final String DEFAULT_REGION = "eu-west-1";
+
 	@Argument(index = 0, required = true, metaVar = "<action>", usage = Action.USAGE) private Action action;
 	@Argument(index = 1, multiValued = true, metaVar = "ARG") private List<String> args;
 
+	@Option(name = "--region", aliases = "-r", metaVar = "<count>", usage = "AWS region, default: " + DEFAULT_REGION) private String region;
 	@Option(name = "--chunksize", aliases = "-s", metaVar = "<count>", usage = "chunk size (bytes)") private long chunkSize;
 	@Option(name = "--threads", aliases = "-t", metaVar = "<count>", usage = "thread count") private int threadCount;
 	@Option(name = "--controls", aliases = "-c", metaVar = "<count>", usage = "control thread count") private int controlCount;
@@ -43,6 +46,10 @@ public class Args {
 
 	public void maxArgs (final int count) throws CmdLineException {
 		if (this.args != null && this.args.size() > count) throw new CmdLineException(null, "Max arg count is  " + count + ", found " + this.args.size() + ".");
+	}
+
+	public String getRegion() {
+		return this.region == null || this.region.length() < 1 ? DEFAULT_REGION : this.region;
 	}
 
 	public int getThreadCount (final int defVal) {

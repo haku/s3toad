@@ -13,6 +13,8 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
@@ -32,19 +34,10 @@ import com.vaguehope.s3toad.util.LogHelper;
 
 public class Main {
 
-	private static final String S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
+	private AmazonS3 s3Client;
 
-	private final AmazonS3 s3Client;
-
-	public Main() throws MalformedURLException {
+	public Main() {
 		LogHelper.bridgeJul();
-		ClientConfiguration clientConfiguration = new ClientConfiguration();
-		findProxy(clientConfiguration);
-		AmazonS3Client s3c = new AmazonS3Client();
-		s3c.setConfiguration(clientConfiguration);
-		s3c.setEndpoint(S3_ENDPOINT);
-		System.err.println("defaultEndpoint=" + S3_ENDPOINT);
-		this.s3Client = s3c;
 	}
 
 	public void run (final String[] rawArgs) {
@@ -54,6 +47,13 @@ public class Main {
 		final CmdLineParser parser = new CmdLineParser(args);
 		try {
 			parser.parseArgument(rawArgs);
+
+			final ClientConfiguration clientConfiguration = new ClientConfiguration();
+			findProxy(clientConfiguration);
+			final Region region = Region.getRegion(Regions.fromName(args.getRegion()));
+			System.err.println("region=" + region.getName());
+			this.s3Client = region.createClient(AmazonS3Client.class, null, clientConfiguration);
+
 			switch (args.getAction()) {
 				case LIST:
 					doList(args);
