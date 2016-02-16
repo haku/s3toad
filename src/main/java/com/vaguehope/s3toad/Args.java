@@ -24,6 +24,7 @@ public class Args {
 	@Option(name = "--metadata", aliases = "-m", metaVar = "<metadata>", usage = "key=value metadata to add to files when uploading/copying, can be specified multiple times", multiValued = true) private List<String> metadata;
 	@Option(name = "--reverse", usage = "download files in reverse order (rpull only)") private boolean reverse;
 	@Option(name = "--limit", usage = "max files to move (rpull only)") private int limit;
+	@Option(name = "--basepath", usage = "prefix local files with") private String basePath;
 
 	public Action getAction () {
 		return this.action;
@@ -91,6 +92,10 @@ public class Args {
 	public long getLimit(final long defVal) {
 		return this.limit < 1 ? defVal : this.limit;
 	}
+
+    public String getBasePath() {
+        return this.basePath;
+    }
 
 	public static enum Action {
 		HELP,

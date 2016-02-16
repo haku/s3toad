@@ -25,13 +25,15 @@ public class DownloadRecursive {
 	private final String prefix;
 	private final boolean reverse;
 	private final long limit;
+    private final String basePath;
 
-	public DownloadRecursive(final AmazonS3 s3Client, final String bucket, final String prefix, final boolean reverse, final long limit) {
+	public DownloadRecursive(final AmazonS3 s3Client, final String bucket, final String prefix, final boolean reverse, final long limit, final String basePath) {
 		this.s3Client = s3Client;
 		this.bucket = bucket;
 		this.prefix = prefix;
 		this.reverse = reverse;
 		this.limit = limit;
+        this.basePath = basePath == null || basePath.length() < 1 ? basename(prefix) : basePath;
 	}
 
 	public void run() throws InterruptedException, IOException {
@@ -52,7 +54,7 @@ public class DownloadRecursive {
 
 		if (this.reverse) Collections.reverse(objects);
 
-		final File baseDir = new File(basename(this.prefix)).getAbsoluteFile();
+		final File baseDir = new File(this.basePath).getAbsoluteFile();
 		LOG.info("baseDir={}", baseDir.getAbsolutePath());
 
 		final TransferManager tm = new TransferManager(this.s3Client);

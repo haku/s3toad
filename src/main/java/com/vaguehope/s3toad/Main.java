@@ -247,7 +247,7 @@ public class Main {
 		System.err.println("reverse=" + reverse);
 		System.err.println("limit=" + limit);
 
-		new DownloadRecursive(this.s3Client, bucket, prefix, reverse, limit).run();
+		new DownloadRecursive(this.s3Client, bucket, prefix, reverse, limit, args.getBasePath()).run();
 	}
 
 	private void doUrl (final Args args) throws CmdLineException {
